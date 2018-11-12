@@ -13,8 +13,8 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
-(ns docker.core
-  (:require [docker.utils :as u])
+(ns clj-docker-client.core
+  (:require [clj-docker-client.utils :as u])
   (:import (java.nio.file Paths)
            (com.spotify.docker.client DefaultDockerClient
                                       DockerClient

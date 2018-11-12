@@ -13,9 +13,9 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
-(ns docker.core-test
+(ns clj-docker-client.core-test
   (:require [clojure.test :refer :all]
-            [docker.core :refer :all])
+            [clj-docker-client.core :refer :all])
   (:import (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)
            (java.io File)

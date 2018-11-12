@@ -13,12 +13,12 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
-(ns docker.utils-test
+(ns clj-docker-client.utils-test
   (:require [clojure.test :refer :all]
             [clojure.spec.alpha :as s]
             [clojure.test.check.clojure-test :refer [defspec]]
             [clojure.test.check.properties :as prop]
-            [docker.utils :refer :all]))
+            [clj-docker-client.utils :refer :all]))
 
 (s/def ::plain-docker-id
   (s/and string?

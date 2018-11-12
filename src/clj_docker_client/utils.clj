@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
-(ns docker.utils)
+(ns clj-docker-client.utils)
 
 (def id-length 12)
 
