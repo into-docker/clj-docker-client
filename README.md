@@ -23,6 +23,11 @@ This is a work in progress and aims to be fully compliant and up to date with th
 (def conn (docker/connect))
 ```
 
+#### Ping the Docker server
+```clojure
+(docker/ping conn)
+```
+
 #### Pulling the `busybox:musl` image
 ```clojure
 (docker/pull conn "busybox:musl")

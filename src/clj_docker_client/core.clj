@@ -29,6 +29,13 @@
   []
   (.build (DefaultDockerClient/fromEnv)))
 
+(defn ping
+  "Healthiness check for the connection to the Docker server.
+
+  Returns OK if everything is fine."
+  [^DockerClient connection]
+  (.ping connection))
+
 ;; Images
 
 (defn format-image

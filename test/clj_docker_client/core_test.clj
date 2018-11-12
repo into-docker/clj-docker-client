@@ -37,6 +37,11 @@
         _           (spit docker-file content)]
     tmp-dir))
 
+(deftest test-connection
+  (with-open [conn (connect)]
+    (testing "Test ping to a Docker server"
+      (is (= "OK" (ping conn))))))
+
 (deftest test-images
   (with-open [conn (connect)]
     (testing "Pulling an image by name"
