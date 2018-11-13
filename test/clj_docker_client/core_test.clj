@@ -69,6 +69,17 @@
             container-id (create conn img "echo hello" {:k "v"})]
         (is (not (nil? (re-matches sha-pattern container-id))))
         (rm conn container-id)))
+    (testing "Container lifecycle"
+      (let [image "redis:alpine"
+            _     (pull conn image)
+            id    (create conn image "redis-server" {})
+            id    (start conn id)
+            info  (first (filter #(= id (:id %)) (ps conn true)))]
+        (is (not (nil? (re-matches sha-pattern id))))
+        (is (= :running (:state info)))
+        (kill conn id)
+        (rm conn id)
+        (image-rm conn image)))
     (testing "Listing the created container"
       (let [id   (create conn img "echo hello" {:k "v"})
             info (first (filter #(= id (:id %)) (ps conn true)))]

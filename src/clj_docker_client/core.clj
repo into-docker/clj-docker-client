@@ -153,13 +153,41 @@
                       [(DockerClient$ListContainersParam/allContainers all?)]))
         (mapv format-container-ps))))
 
+(defn start
+  "Starts a created container asynchronously by name or id.
+
+  Returns the name or id."
+  [^DockerClient connection name]
+  (do (.startContainer connection name)
+      name))
+
+(defn stop
+  "Stops a container with SIGTERM by name or id.
+
+  Waits for timeout secs or value of timeout before killing.
+  Returns the name or id."
+  ([^DockerClient connection name] (stop connection name 30))
+  ([^DockerClient connection name timeout]
+   (do (.stopContainer connection name timeout)
+       name)))
+
+(defn kill
+  "Kills container with SIGKILL by name or id.
+
+  Assumes the container to be running.
+  Returns the name or id."
+  [^DockerClient connection name]
+  (do (.killContainer connection name)
+      name))
+
 (defn rm
   "Removes a container by name or id.
 
-  Pass true to force kill a running container and remove it."
-  ([^DockerClient connection ^String name] (rm connection name false))
-  ([^DockerClient connection ^String name force?]
+  Pass true to force kill a running container and remove it.
+  Returns the name or id."
+  ([^DockerClient connection name] (rm connection name false))
+  ([^DockerClient connection name force?]
    (do (when force?
-         (.killContainer connection name))
+         (kill connection name))
        (.removeContainer connection name)
        name)))
