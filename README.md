@@ -5,7 +5,7 @@
 [![Build Status](https://travis-ci.org/lispyclouds/clj-docker-client.svg?branch=master)](https://travis-ci.org/lispyclouds/clj-docker-client)
 
 ``` clojure
-[lispyclouds/clj-docker-client "0.1.3"]
+[lispyclouds/clj-docker-client "0.1.4"]
 ```
 
 An idiomatic Clojure Docker client based on the excellent JVM [client](https://github.com/spotify/docker-client) by Spotify.
@@ -66,6 +66,21 @@ This is a work in progress and aims to be fully compliant and up to date with th
 ```clojure
 (docker/ps conn) ; Only running containers
 (docker/ps conn true) ; All containers
+```
+
+#### Starting a container
+```clojure
+(docker/start conn "name or id")
+```
+
+#### Stopping a container
+```clojure
+(docker/stop conn "name or id")
+```
+
+#### Killing a container
+```clojure
+(docker/kill conn "name or id")
 ```
 
 #### Removing a container
