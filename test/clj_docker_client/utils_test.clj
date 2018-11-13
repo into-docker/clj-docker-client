@@ -28,3 +28,11 @@
   100
   (prop/for-all [msg (s/gen ::plain-docker-id)]
     (<= (count (format-id msg)) id-length)))
+
+(deftest shell-arg-tokenize-test
+  (testing "tokenizing a Shell command"
+    (is (= (sh-tokenize! "sh -c \"while sleep 1; do echo ${RANDOM}; done\"")
+           ["sh" "-c" "while sleep 1; do echo ${RANDOM}; done"])))
+  (testing "tokenizing a Shell command with escaped double quotes"
+    (is (= (sh-tokenize! "sort -t \"\t\" -k2 test > test-sorted")
+           ["sort" "-t" "\t" "-k2" "test" ">" "test-sorted"]))))
