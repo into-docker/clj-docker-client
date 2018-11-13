@@ -152,3 +152,14 @@
           (into-array DockerClient$ListContainersParam
                       [(DockerClient$ListContainersParam/allContainers all?)]))
         (mapv format-container-ps))))
+
+(defn rm
+  "Removes a container by name or id.
+
+  Pass true to force kill a running container and remove it."
+  ([^DockerClient connection ^String name] (rm connection name false))
+  ([^DockerClient connection ^String name force?]
+   (do (when force?
+         (.killContainer connection name))
+       (.removeContainer connection name)
+       name)))

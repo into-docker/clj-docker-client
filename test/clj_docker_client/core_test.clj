@@ -67,10 +67,16 @@
     (testing "Creating a container"
       (let [_            (pull conn img)
             container-id (create conn img "echo hello" {:k "v"})]
-        (is (not (nil? (re-matches sha-pattern container-id))))))
+        (is (not (nil? (re-matches sha-pattern container-id))))
+        (rm conn container-id)))
     (testing "Listing the created container"
       (let [id   (create conn img "echo hello" {:k "v"})
             info (first (filter #(= id (:id %)) (ps conn true)))]
         (is (= "echo hello" (:command info)))
         (is (= :created (:state info)))
-        (is (= img (:image info)))))))
+        (is (= img (:image info)))
+        (rm conn id)))
+    (testing "Removing a container"
+      (let [id (create conn img "echo hello" {:k "v"})
+            _  (rm conn id)]
+        (is (empty? (filter #(= id (:id %)) (ps conn true))))))))

@@ -67,3 +67,9 @@ This is a work in progress and aims to be fully compliant and up to date with th
 (docker/ps conn) ; Only running containers
 (docker/ps conn true) ; All containers
 ```
+
+#### Removing a container
+```clojure
+(docker/rm conn "id or name") ; Remove non-running container
+(docker/rm conn "id or name" true) ; Force remove non-running container
+```
