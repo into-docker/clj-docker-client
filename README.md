@@ -28,6 +28,8 @@ This is a work in progress and aims to be fully compliant and up to date with th
 (docker/ping conn)
 ```
 
+### Image Handling
+
 #### Pulling the `busybox:musl` image
 ```clojure
 (docker/pull conn "busybox:musl")
@@ -51,4 +53,17 @@ This is a work in progress and aims to be fully compliant and up to date with th
 #### List all available images
 ```clojure
 (docker/image-ls conn)
+```
+
+### Container Handling
+
+#### Creating a container with the `busybox:musl` image, a command and a env var
+```clojure
+(docker/create conn "busybox:musl" "echo hello" {:env "testing"})
+```
+
+#### Listing all available containers
+```clojure
+(docker/ps conn) ; Only running containers
+(docker/ps conn true) ; All containers
 ```

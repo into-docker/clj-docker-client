@@ -19,8 +19,14 @@
            (com.spotify.docker.client DefaultDockerClient
                                       DockerClient
                                       DockerClient$ListImagesParam
-                                      DockerClient$BuildParam)
-           (com.spotify.docker.client.messages Image)))
+                                      DockerClient$BuildParam
+                                      DockerClient$ListContainersParam)
+           (com.spotify.docker.client.messages Image
+                                               Container
+                                               Container$PortMapping
+                                               ContainerConfig
+                                               HostConfig ContainerCreation)
+           (java.util List)))
 
 (defn connect
   "Connects to the local Docker daemon with default settings.
@@ -38,7 +44,7 @@
 
 ;; Images
 
-(defn format-image
+(defn- format-image
   [^Image image]
   {:id        (u/format-id (.id image))
    :repo-tags (.repoTags image)
@@ -50,7 +56,8 @@
 
   The *name* is represented by <repo>:<tag>."
   [^DockerClient connection ^String name]
-  (.pull connection name))
+  (do (.pull connection name)
+      name))
 
 (defn build
   "Builds an image from a provided directory.
@@ -84,5 +91,64 @@
   [^DockerClient connection]
   (->> (.listImages
          connection
-         (into-array DockerClient$ListImagesParam [(DockerClient$ListImagesParam/allImages)]))
-       (map format-image)))
+         (into-array DockerClient$ListImagesParam
+                     [(DockerClient$ListImagesParam/allImages)]))
+       (mapv format-image)))
+
+;; Containers
+
+(defn- format-port-mapping
+  [^Container$PortMapping port-mapping]
+  {:public  (.publicPort port-mapping)
+   :private (.privatePort port-mapping)
+   :type    (keyword (.type port-mapping))
+   :ip      (.ip port-mapping)})
+
+(defn- format-container-ps
+  [^Container container]
+  {:id      (u/format-id (.id container))
+   :names   (mapv #(clojure.string/replace % #"/" "")
+                  (.names container))
+   :image   (.image container)
+   :command (.command container)
+   :state   (keyword (.state container))
+   :status  (.status container)
+   :ports   (mapv format-port-mapping (.ports container))})
+
+(defn- config-of
+  [^String image ^List cmd ^List env-vars]
+  (-> (ContainerConfig/builder)
+      (.hostConfig (.build (HostConfig/builder)))
+      (.env env-vars)
+      (.image image)
+      (.cmd cmd)
+      (.build)))
+
+(defn- format-env-vars
+  [env-vars]
+  (map #(format "%s=%s" (name (first %)) (last %))
+       env-vars))
+
+(defn create
+  "Creates a container.
+
+  Takes the image, entry point command and environment vars as a map
+  and returns the id of the created container."
+  [^DockerClient connection image cmd env-vars]
+  (let [config   (config-of image
+                            (u/sh-tokenize! cmd)
+                            (format-env-vars env-vars))
+        creation ^ContainerCreation (.createContainer connection config)]
+    (u/format-id (.id creation))))
+
+(defn ps
+  "Lists all containers.
+
+  Lists all running containers by default, all can be listed by passing a true param to *all?*"
+  ([^DockerClient connection] (ps connection false))
+  ([^DockerClient connection all?]
+   (->> (.listContainers
+          connection
+          (into-array DockerClient$ListContainersParam
+                      [(DockerClient$ListContainersParam/allContainers all?)]))
+        (mapv format-container-ps))))

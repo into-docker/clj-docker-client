@@ -23,9 +23,11 @@
 
 (def sha-pattern #"\b[0-9a-f]{5,40}\b")
 
+(def img "busybox:musl")
+
 (defn temp-docker-dir
   []
-  (let [content     "FROM busybox:musl\nRUN touch test.txt\n"
+  (let [content     (format "FROM %s\nRUN touch test.txt\n" img)
         tmp-dir     (str
                       (.toAbsolutePath
                         (Files/createTempDirectory
@@ -45,7 +47,7 @@
 (deftest test-images
   (with-open [conn (connect)]
     (testing "Pulling an image by name"
-      (is (nil? (pull conn "busybox:musl"))))
+      (is (= img (pull conn img))))
     (testing "Building an image from a Dockerfile"
       (let [id (build conn (temp-docker-dir))]
         (is (not (nil? (re-matches sha-pattern id))))
@@ -57,4 +59,18 @@
       (let [id (build conn (temp-docker-dir))]
         (is (not (empty? (->> (image-ls conn)
                               (filter #(= (:id %) id))))))
-        (image-rm conn id)))))
+        (image-rm conn id)
+        (image-rm conn img)))))
+
+(deftest test-containers
+  (with-open [conn (connect)]
+    (testing "Creating a container"
+      (let [_            (pull conn img)
+            container-id (create conn img "echo hello" {:k "v"})]
+        (is (not (nil? (re-matches sha-pattern container-id))))))
+    (testing "Listing the created container"
+      (let [id   (create conn img "echo hello" {:k "v"})
+            info (first (filter #(= id (:id %)) (ps conn true)))]
+        (is (= "echo hello" (:command info)))
+        (is (= :created (:state info)))
+        (is (= img (:image info)))))))
