@@ -1,16 +1,45 @@
-## clj-docker-client
+## clj-docker-client [![Build Status](https://travis-ci.org/lispyclouds/clj-docker-client.svg?branch=master)](https://travis-ci.org/lispyclouds/clj-docker-client)
 
 [![License: GPL v3](https://img.shields.io/badge/license-GPL%20v3-blue.svg?style=flat-square)](http://www.gnu.org/licenses/gpl-3.0)
 [![Clojars Project](https://img.shields.io/clojars/v/lispyclouds/clj-docker-client.svg?style=flat-square)](https://clojars.org/lispyclouds/clj-docker-client)
-[![Build Status](https://travis-ci.org/lispyclouds/clj-docker-client.svg?branch=master)](https://travis-ci.org/lispyclouds/clj-docker-client)
-
-``` clojure
-[lispyclouds/clj-docker-client "0.1.4"]
-```
 
 An idiomatic Clojure Docker client based on the excellent JVM [client](https://github.com/spotify/docker-client) by Spotify.
 
+### Why not use the Spotify lib directly?
+The Spotify lib though being excellent, has Java style varag method calls,
+non-standard variable passing and undocumented behaviour. This eases out these 
+things and to make an idiomatic, clojure friendly API to Docker.   
+
 This is a work in progress and aims to be fully compliant and up to date with the Docker API changes. 
+
+### Installation
+Leiningen/Boot
+```clojure
+[lispyclouds/clj-docker-client "0.1.4"]
+```
+
+Clojure CLI/deps.edn
+```clojure
+{lispyclouds/clj-docker-client {:mvn/version "0.1.4"}}
+```
+
+Gradle
+```groovy
+compile 'lispyclouds:clj-docker-client:0.1.4'
+```
+
+Maven
+```xml
+<dependency>
+  <groupId>lispyclouds</groupId>
+  <artifactId>clj-docker-client</artifactId>
+  <version>0.1.4</version>
+</dependency>
+```
+
+### Requirements
+- Clojure 1.9+
+- JDK 1.8+
 
 ### Usage
 
@@ -50,7 +79,7 @@ This is a work in progress and aims to be fully compliant and up to date with th
 (docker/image-rm conn "image id or <repo>:<tag>")
 ```
 
-#### List all available images
+#### Listing all available images
 ```clojure
 (docker/image-ls conn)
 ```
