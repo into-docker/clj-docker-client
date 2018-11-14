@@ -180,6 +180,32 @@
   (do (.killContainer connection name)
       name))
 
+(defn restart
+  "Restarts a container with by name or id.
+
+  Waits for timeout secs or value of timeout before killing.
+  Returns the name or id."
+  ([^DockerClient connection name] (restart connection name 30))
+  ([^DockerClient connection name timeout]
+   (do (.restartContainer connection name timeout)
+       name)))
+
+(defn pause
+  "Pauses a container by name or id.
+
+  Returns the name or id."
+  [^DockerClient connection name]
+  (do (.pauseContainer connection name)
+      name))
+
+(defn un-pause
+  "Un-pauses a container by name or id.
+
+  Returns the name or id."
+  [^DockerClient connection name]
+  (do (.unpauseContainer connection name)
+      name))
+
 (defn rm
   "Removes a container by name or id.
 

@@ -112,6 +112,21 @@ Maven
 (docker/kill conn "name or id")
 ```
 
+#### Restarting a container
+```clojure
+(docker/restart conn "name or id")
+```
+
+#### Pausing a container
+```clojure
+(docker/pause conn "name or id")
+```
+
+#### Un-pausing a container
+```clojure
+(docker/un-pause conn "name or id")
+```
+
 #### Removing a container
 ```clojure
 (docker/rm conn "id or name") ; Remove non-running container
