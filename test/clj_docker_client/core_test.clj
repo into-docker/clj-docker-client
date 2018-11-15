@@ -64,9 +64,9 @@
 
 (deftest test-containers
   (with-open [conn (connect)]
+    (pull conn img)
     (testing "Creating a container"
-      (let [_            (pull conn img)
-            container-id (create conn img "echo hello" {:k "v"})]
+      (let [container-id (create conn img "echo hello" {:k "v"})]
         (is (not (nil? (re-matches sha-pattern container-id))))
         (rm conn container-id)))
     (testing "Container lifecycle"
@@ -87,7 +87,15 @@
         (is (= :created (:state info)))
         (is (= img (:image info)))
         (rm conn id)))
+    (testing "Logging from a container"
+      (let [id     (create conn img "sh -c 'for i in `seq 1 5`; do echo $i; done'" {})
+            _      (start conn id)
+            _      (.waitContainer conn id)
+            output (logs conn id)]
+        (is (= ["1" "2" "3" "4" "5"] output))
+        (rm conn id)))
     (testing "Removing a container"
       (let [id (create conn img "echo hello" {:k "v"})
             _  (rm conn id)]
-        (is (empty? (filter #(= id (:id %)) (ps conn true))))))))
+        (is (empty? (filter #(= id (:id %)) (ps conn true))))))
+    (image-rm conn img)))

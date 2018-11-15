@@ -41,6 +41,11 @@ Maven
 - Clojure 1.9+
 - JDK 1.8+
 
+### Running tests locally
+- Install [leiningen](https://leiningen.org/)
+- Install [Docker](https://www.docker.com/)
+- `lein test` to run all unit tests. (needs Docker and working internet)
+
 ### Usage
 
 ```clojure
@@ -125,6 +130,11 @@ Maven
 #### Un-pausing a container
 ```clojure
 (docker/un-pause conn "name or id")
+```
+
+#### Getting logs from a container
+```clojure
+(docker/logs conn "name or id")
 ```
 
 #### Removing a container

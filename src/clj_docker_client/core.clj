@@ -20,12 +20,14 @@
                                       DockerClient
                                       DockerClient$ListImagesParam
                                       DockerClient$BuildParam
-                                      DockerClient$ListContainersParam)
+                                      DockerClient$ListContainersParam
+                                      DockerClient$LogsParam)
            (com.spotify.docker.client.messages Image
                                                Container
                                                Container$PortMapping
                                                ContainerConfig
-                                               HostConfig ContainerCreation)
+                                               HostConfig
+                                               ContainerCreation)
            (java.util List)))
 
 (defn connect
@@ -205,6 +207,17 @@
   [^DockerClient connection name]
   (do (.unpauseContainer connection name)
       name))
+
+(defn logs
+  "Returns a line-seq of logs from a container by name or id."
+  [^DockerClient connection name]
+  (-> (.logs connection
+             name
+             (into-array DockerClient$LogsParam
+                         [(DockerClient$LogsParam/stdout)
+                          (DockerClient$LogsParam/stderr)]))
+      (.readFully)
+      (clojure.string/split-lines)))
 
 (defn rm
   "Removes a container by name or id.
