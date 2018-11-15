@@ -27,7 +27,8 @@
                                                Container$PortMapping
                                                ContainerConfig
                                                HostConfig
-                                               ContainerCreation)
+                                               ContainerCreation
+                                               ContainerState)
            (java.util List)))
 
 (defn connect
@@ -131,6 +132,19 @@
   (map #(format "%s=%s" (name (first %)) (last %))
        env-vars))
 
+(defn- format-state
+  [^ContainerState state]
+  {:status      (keyword (.status state))
+   :running?    (.running state)
+   :paused      (.paused state)
+   :restarting? (.restarting state)
+   :pid         (.pid state)
+   :exit-code   (.exitCode state)
+   :started-at  (.startedAt state)
+   :finished-at (.finishedAt state)
+   :error       (.error state)
+   :oom-killed? (.oomKilled state)})
+
 (defn create
   "Creates a container.
 
@@ -218,6 +232,14 @@
                           (DockerClient$LogsParam/stderr)]))
       (.readFully)
       (clojure.string/split-lines)))
+
+(defn container-state
+  "Returns the current state of a created container by name or id."
+  [^DockerClient connection name]
+  (-> connection
+      (.inspectContainer name)
+      (.state)
+      (format-state)))
 
 (defn rm
   "Removes a container by name or id.

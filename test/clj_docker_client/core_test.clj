@@ -19,7 +19,8 @@
   (:import (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)
            (java.io File)
-           (com.spotify.docker.client.messages RemovedImage)))
+           (com.spotify.docker.client.messages RemovedImage)
+           (com.spotify.docker.client DockerClient)))
 
 (def sha-pattern #"\b[0-9a-f]{5,40}\b")
 
@@ -63,7 +64,7 @@
         (image-rm conn img)))))
 
 (deftest test-containers
-  (with-open [conn (connect)]
+  (with-open [conn ^DockerClient (connect)]
     (pull conn img)
     (testing "Creating a container"
       (let [container-id (create conn img "echo hello" {:k "v"})]
@@ -93,6 +94,14 @@
             _      (.waitContainer conn id)
             output (logs conn id)]
         (is (= ["1" "2" "3" "4" "5"] output))
+        (rm conn id)))
+    (testing "Fetching container state"
+      (let [id    (create conn img "echo hello" {})
+            _     (start conn id)
+            _     (.waitContainer conn id)
+            state (container-state conn id)]
+        (is (= :exited (:status state)))
+        (is (zero? (:exit-code state)))
         (rm conn id)))
     (testing "Removing a container"
       (let [id (create conn img "echo hello" {:k "v"})

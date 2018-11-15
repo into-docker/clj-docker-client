@@ -137,6 +137,11 @@ Maven
 (docker/logs conn "name or id")
 ```
 
+#### Getting the current container state
+```clojure
+(docker/container-state conn "name or id")
+```
+
 #### Removing a container
 ```clojure
 (docker/rm conn "id or name") ; Remove non-running container
