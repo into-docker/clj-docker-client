@@ -76,7 +76,11 @@ Maven
 
 #### Building an image from a Dockerfile
 ```clojure
-(docker/build conn "full path to directory containing a Dockerfile")
+(docker/build
+  conn
+  "full path to directory containing a Dockerfile"
+  "repo-name"
+  "tag")
 ```
 
 #### Pushing an image

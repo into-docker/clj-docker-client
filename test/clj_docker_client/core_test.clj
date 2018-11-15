@@ -50,14 +50,14 @@
     (testing "Pulling an image by name"
       (is (= img (pull conn img))))
     (testing "Building an image from a Dockerfile"
-      (let [id (build conn (temp-docker-dir))]
+      (let [id (build conn (temp-docker-dir) "test")]
         (is (not (nil? (re-matches sha-pattern id))))
         (image-rm conn id)))
     (testing "Removing an image"
-      (let [id (build conn (temp-docker-dir))]
+      (let [id (build conn (temp-docker-dir) "test")]
         (is (instance? RemovedImage (first (image-rm conn id))))))
     (testing "Listing all images"
-      (let [id (build conn (temp-docker-dir))]
+      (let [id (build conn (temp-docker-dir) "test")]
         (is (not (empty? (->> (image-ls conn)
                               (filter #(= (:id %) id))))))
         (image-rm conn id)

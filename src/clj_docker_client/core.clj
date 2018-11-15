@@ -68,15 +68,18 @@
       name))
 
 (defn build
-  "Builds an image from a provided directory.
+  "Builds an image from a provided directory, repo and optional tag.
 
   Assumes a Dockerfile to be present in that directory."
-  [^DockerClient connection ^String path]
-  (let [build-path (Paths/get path (into-array String []))]
-    (.build
-      connection
-      build-path
-      (into-array DockerClient$BuildParam []))))
+  ([^DockerClient connection ^String path ^String repo]
+   (build connection path repo "latest"))
+  ([^DockerClient connection ^String path ^String repo ^String tag]
+   (let [build-path (Paths/get path (into-array String []))]
+     (.build
+       connection
+       build-path
+       (format "%s:%s" repo tag)
+       (into-array DockerClient$BuildParam [])))))
 
 (defn push
   "Pushes an image by *name* or id.
