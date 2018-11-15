@@ -13,14 +13,14 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
-(defproject lispyclouds/clj-docker-client "0.1.4"
+(defproject lispyclouds/clj-docker-client "0.1.5"
   :author "Rahul De <rahul@mailbox.org>"
   :url "https://github.com/lispyclouds/clj-docker-client"
   :description "And idiomatic clojure client for Docker."
   :license {:name "GPL 3.0"
             :url  "https://www.gnu.org/licenses/gpl-3.0.en.html"}
   :dependencies [[org.clojure/clojure "1.9.0"]
-                 [com.spotify/docker-client "8.14.3"]]
+                 [com.spotify/docker-client "8.14.4"]]
   :plugins [[lein-ancient "0.6.15"]]
   :global-vars {*warn-on-reflection* true}
   :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]}})
