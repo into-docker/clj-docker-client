@@ -52,9 +52,14 @@ Maven
 (require '[clj-docker-client.core :as docker])
 ```
 
-#### Creating a connection to the Local Docker daemon
+#### Creating a connection to the local Docker daemon
 ```clojure
 (def conn (docker/connect))
+```
+
+#### Closing the connection to the Docker daemon
+```clojure
+(docker/disconnect conn)
 ```
 
 #### Ping the Docker server

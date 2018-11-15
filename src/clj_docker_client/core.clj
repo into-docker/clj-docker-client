@@ -38,6 +38,11 @@
   []
   (.build (DefaultDockerClient/fromEnv)))
 
+(defn disconnect
+  "Closes the connection to the Docker server."
+  [^DockerClient connection]
+  (.close connection))
+
 (defn ping
   "Healthiness check for the connection to the Docker server.
 
