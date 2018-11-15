@@ -6,9 +6,9 @@
 An idiomatic Clojure Docker client based on the excellent JVM [client](https://github.com/spotify/docker-client) by Spotify.
 
 ### Why not use the Spotify lib directly?
-The Spotify lib though being excellent, has Java style varag method calls,
+The Spotify lib though being excellent, has Java style vararg method calls,
 non-standard variable passing and undocumented behaviour. This eases out these 
-things and to make an idiomatic, clojure friendly API to Docker.   
+things to make an idiomatic, clojure friendly API to Docker.   
 
 This is a work in progress and aims to be fully compliant and up to date with the Docker API changes. 
 
