@@ -28,7 +28,8 @@
                                                ContainerConfig
                                                HostConfig
                                                ContainerCreation
-                                               ContainerState)
+                                               ContainerState
+                                               RegistryAuth)
            (java.util List)))
 
 (defn connect
@@ -49,6 +50,14 @@
   Returns OK if everything is fine."
   [^DockerClient connection]
   (.ping connection))
+
+(defn register
+  "Builds login info for a Docker registry."
+  [^String username ^String password]
+  (-> (RegistryAuth/builder)
+      (.username username)
+      (.password password)
+      (.build)))
 
 ;; Images
 
@@ -82,11 +91,12 @@
        (into-array DockerClient$BuildParam [])))))
 
 (defn push
-  "Pushes an image by *name* or id.
+  "Pushes an image by *name*.
 
   The *name* is represented by <repo>:<tag>."
-  [^DockerClient connection ^String name]
-  (.push connection name))
+  [^DockerClient connection ^String name ^RegistryAuth auth]
+  (do (.push connection name auth)
+      name))
 
 (defn image-rm
   "Deletes an image by *name* or id.

@@ -67,6 +67,11 @@ Maven
 (docker/ping conn)
 ```
 
+#### Build login info with Docker Hub
+```clojure
+(def login-info (docker/register conn "username" "password"))
+```
+
 ### Image Handling
 
 #### Pulling the `busybox:musl` image
@@ -85,7 +90,7 @@ Maven
 
 #### Pushing an image
 ```clojure
-(docker/push conn "image id or <repo>:<tag>")
+(docker/push conn "image id or <repo>:<tag>" login-info)
 ```
 
 #### Removing an image
