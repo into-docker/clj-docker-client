@@ -22,8 +22,6 @@
            (com.spotify.docker.client.messages RemovedImage)
            (com.spotify.docker.client DockerClient)))
 
-(def sha-pattern #"\b[0-9a-f]{5,40}\b")
-
 (def img "busybox:musl")
 
 (defn temp-docker-dir
@@ -40,6 +38,11 @@
         _           (spit docker-file content)]
     tmp-dir))
 
+(defn correct-id?
+  [id]
+  (let [sha-pattern #"\b[0-9a-f]{5,40}\b"]
+    (not (nil? (re-matches sha-pattern id)))))
+
 (deftest test-connection
   (with-open [conn (connect)]
     (testing "Test ping to a Docker server"
@@ -51,8 +54,7 @@
       (is (= img (pull conn img))))
     (testing "Building an image from a Dockerfile"
       (let [id (build conn (temp-docker-dir) "test")]
-        (is (not (nil? (re-matches sha-pattern id))))
-        (image-rm conn id)))
+        (is (correct-id? id))))
     (testing "Removing an image"
       (let [id (build conn (temp-docker-dir) "test")]
         (is (instance? RemovedImage (first (image-rm conn id))))))
@@ -60,15 +62,22 @@
       (let [id (build conn (temp-docker-dir) "test")]
         (is (not (empty? (->> (image-ls conn)
                               (filter #(= (:id %) id))))))
-        (image-rm conn id)
-        (image-rm conn img)))))
+        (image-rm conn id)))
+    (testing "Container commit"
+      (let [id     (create conn img "echo hello" {})
+            img-id (commit-container conn id "test/test" "latest" "echo hi")]
+        (is (correct-id? img-id))
+        (is (not (empty? (->> (image-ls conn)
+                              (filter #(= (:id %)))))))
+        (rm conn id)))
+    (image-rm conn img)))
 
 (deftest test-containers
   (with-open [conn ^DockerClient (connect)]
     (pull conn img)
     (testing "Creating a container"
       (let [container-id (create conn img "echo hello" {:k "v"})]
-        (is (not (nil? (re-matches sha-pattern container-id))))
+        (is (correct-id? container-id))
         (rm conn container-id)))
     (testing "Container lifecycle"
       (let [image "redis:alpine"
@@ -76,7 +85,7 @@
             id    (create conn image "redis-server" {})
             id    (start conn id)
             info  (first (filter #(= id (:id %)) (ps conn true)))]
-        (is (not (nil? (re-matches sha-pattern id))))
+        (is (correct-id? id))
         (is (= :running (:state info)))
         (kill conn id)
         (rm conn id)

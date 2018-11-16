@@ -59,6 +59,15 @@
       (.password password)
       (.build)))
 
+(defn- config-of
+  [^String image ^List cmd ^List env-vars]
+  (-> (ContainerConfig/builder)
+      (.hostConfig (.build (HostConfig/builder)))
+      (.env env-vars)
+      (.image image)
+      (.cmd cmd)
+      (.build)))
+
 ;; Images
 
 (defn- format-image
@@ -116,6 +125,27 @@
                      [(DockerClient$ListImagesParam/allImages)]))
        (mapv format-image)))
 
+(defn commit-container
+  "Creates an image from the changes of a container by name or id.
+
+  Takes the repo, tag of the image and the new entry point command.
+  Returns the id of the new image."
+  [^DockerClient connection ^String id ^String repo ^String tag ^String command]
+  (-> connection
+      (.commitContainer id
+                        repo
+                        tag
+                        (config-of (-> connection
+                                       (.inspectContainer id)
+                                       (.config)
+                                       (.image))
+                                   (u/sh-tokenize! command)
+                                   [])
+                        nil
+                        nil)
+      (.id)
+      (u/format-id)))
+
 ;; Containers
 
 (defn- format-port-mapping
@@ -135,15 +165,6 @@
    :state   (keyword (.state container))
    :status  (.status container)
    :ports   (mapv format-port-mapping (.ports container))})
-
-(defn- config-of
-  [^String image ^List cmd ^List env-vars]
-  (-> (ContainerConfig/builder)
-      (.hostConfig (.build (HostConfig/builder)))
-      (.env env-vars)
-      (.image image)
-      (.cmd cmd)
-      (.build)))
 
 (defn- format-env-vars
   [env-vars]

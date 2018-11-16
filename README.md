@@ -103,6 +103,16 @@ Maven
 (docker/image-ls conn)
 ```
 
+#### Committing changes from a container to a new image
+```clojure
+(docker/commit-container
+  conn
+  "container id"
+  "repo"
+  "tag"
+  "entry point command")
+```
+
 ### Container Handling
 
 #### Creating a container with the `busybox:musl` image, a command and a env var
