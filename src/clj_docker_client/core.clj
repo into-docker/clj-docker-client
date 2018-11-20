@@ -85,6 +85,8 @@
 (defn build
   "Builds an image from a provided directory, repo and optional tag.
 
+  Returns the id of the built image.
+
   Assumes a Dockerfile to be present in that directory."
   ([^DockerClient connection ^String path ^String repo]
    (build connection path repo "latest"))
@@ -99,6 +101,8 @@
 (defn push
   "Pushes an image by *name*.
 
+  Returns the name of the pushed image.
+
   The *name* is represented by <repo>:<tag>."
   [^DockerClient connection ^String name ^RegistryAuth auth]
   (do (.push connection name auth)
@@ -107,11 +111,17 @@
 (defn image-rm
   "Deletes an image by *name* or id.
 
+  Returns the name of the removed image.
+
+  If forced? is set removal is forced.
+  If no-prune? is set untagged parents aren't removed.
+
   The *name* is represented by <repo>:<tag>."
   ([^DockerClient connection ^String name]
-   (.removeImage connection name))
+   (image-rm connection name false false))
   ([^DockerClient connection ^String name force? no-prune?]
-   (.removeImage connection name force? no-prune?)))
+   (do (.removeImage connection name force? no-prune?)
+       name)))
 
 (defn image-ls
   "Lists all available images."

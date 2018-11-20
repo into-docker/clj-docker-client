@@ -104,7 +104,7 @@
         (is (correct-id? id))))
     (testing "Removing an image"
       (let [id (build conn (temp-docker-dir) "test")]
-        (is (instance? RemovedImage (first (image-rm conn id))))))
+        (is (correct-id? (image-rm conn id)))))
     (testing "Listing all images"
       (let [id (build conn (temp-docker-dir) "test")]
         (is (not (empty? (->> (image-ls conn)
