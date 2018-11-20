@@ -239,6 +239,28 @@
       (.state)
       (f/format-state)))
 
+(defn wait-container
+  "Waits for the exit of a container by id or name."
+  [^DockerClient connection name]
+  (.statusCode (.waitContainer connection name)))
+
+(defn run
+  "Runs a container with a specified image, command and env vars.
+
+  Returns the container id.
+
+  Runs synchronously by default, i.e. waits for the container exit.
+  If detached? flag is true, executes asynchronously."
+  ([^DockerClient connection image command env-vars]
+   (run connection image command env-vars false))
+  ([^DockerClient connection image command env-vars detached?]
+   (let [id (->> (create connection image command env-vars)
+                 (start connection))]
+     (if (not detached?)
+       (do (wait-container connection id)
+           id)
+       id))))
+
 (defn rm
   "Removes a container by name or id.
 

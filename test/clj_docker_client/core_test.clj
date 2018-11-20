@@ -159,6 +159,10 @@
         (is (= :exited (:status state)))
         (is (zero? (:exit-code state)))
         (rm conn id)))
+    (testing "Running from an image"
+      (let [id (run conn img "echo hello" {})]
+        (is (correct-id? id))
+        (rm conn id)))
     (testing "Removing a container"
       (let [id (create conn img "echo hello" {:k "v"})
             _  (rm conn id)]

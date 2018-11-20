@@ -161,6 +161,12 @@ Maven
 (docker/un-pause conn "name or id")
 ```
 
+#### Running from an image directly
+```clojure
+(docker/run conn "image" "command" {:env "test"}) ; Waits for container exit
+(docker/run conn "image" "command" {:env "test"} true) ; Detached, returns immediately
+```
+
 #### Getting logs from a container
 ```clojure
 (docker/logs conn "name or id")
