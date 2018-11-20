@@ -10,7 +10,10 @@ The Spotify lib though being excellent, has Java style vararg method calls,
 non-standard variable passing and undocumented behaviour. This eases out these 
 things to make an idiomatic, clojure friendly API to Docker.   
 
-This is a work in progress and aims to be fully compliant and up to date with the Docker API changes. 
+This is a work in progress and aims to be fully compliant and up to date with 
+the Docker API changes. 
+
+**Please raise issues here for any new feature requests!**
 
 ### Installation
 Leiningen/Boot
