@@ -14,7 +14,8 @@
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
 (ns clj-docker-client.core
-  (:require [clj-docker-client.utils :as u]
+  (:require [byte-streams :as bs]
+            [clj-docker-client.utils :as u]
             [clj-docker-client.formatters :as f])
   (:import (java.nio.file Paths)
            (com.spotify.docker.client DefaultDockerClient
@@ -22,7 +23,8 @@
                                       DockerClient$ListImagesParam
                                       DockerClient$BuildParam
                                       DockerClient$ListContainersParam
-                                      DockerClient$LogsParam)
+                                      DockerClient$LogsParam
+                                      LogMessage)
            (com.spotify.docker.client.messages ContainerConfig
                                                HostConfig
                                                ContainerCreation
@@ -221,15 +223,18 @@
       name))
 
 (defn logs
-  "Returns a line-seq of logs from a container by name or id."
+  "Returns a lazy seq of logs split by lines from a container by name or id."
   [^DockerClient connection name]
-  (-> (.logs connection
-             name
-             (into-array DockerClient$LogsParam
-                         [(DockerClient$LogsParam/stdout)
-                          (DockerClient$LogsParam/stderr)]))
-      (.readFully)
-      (clojure.string/split-lines)))
+  (->> (.logs connection
+              name
+              (into-array DockerClient$LogsParam
+                          [(DockerClient$LogsParam/stdout)
+                           (DockerClient$LogsParam/stderr)]))
+       (iterator-seq)
+       (map #(.content ^LogMessage %))
+       (bs/to-input-stream)
+       (clojure.java.io/reader)
+       (line-seq)))
 
 (defn container-state
   "Returns the current state of a created container by name or id."
