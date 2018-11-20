@@ -116,6 +116,7 @@
         (is (correct-id? img-id))
         (is (not (empty? (->> (image-ls conn)
                               (filter #(= (:id %)))))))
+        (image-rm conn img-id)
         (rm conn id)))
     (image-rm conn img)))
 
