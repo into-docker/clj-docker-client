@@ -20,7 +20,8 @@
                                                Image
                                                Container$PortMapping
                                                Container
-                                               ContainerState)
+                                               ContainerState
+                                               Info)
            (com.spotify.docker.client.messages.swarm SwarmInfo
                                                      SwarmCluster
                                                      SwarmSpec
@@ -110,8 +111,7 @@
 
 (defn format-driver
   [^Driver driver]
-  (if (nil? driver)
-    nil
+  (when (not (nil? driver))
     {:name    (.name driver)
      :options (.options driver)}))
 
@@ -135,8 +135,7 @@
 
 (defn format-swarm-cluster
   [^SwarmCluster cluster]
-  (if (nil? cluster)
-    nil
+  (when (not (nil? cluster))
     {:id         (.id cluster)
      :version    {:index (.index (.version cluster))}
      :created_at (.createdAt cluster)
@@ -159,3 +158,49 @@
    :nodes              (.nodes info)
    :managers           (.managers info)
    :remote-managers    (map format-remote-manager (.remoteManagers info))})
+
+(defn format-info
+  [^Info info]
+  {:arch                 (.architecture info)
+   :cluster-store        (.clusterStore info)
+   :cgroup-driver        (.cgroupDriver info)
+   :containers           (.containers info)
+   :running-containers   (.containersRunning info)
+   :paused-containers    (.containersPaused info)
+   :cpu-cfs-period?      (.cpuCfsPeriod info)
+   :cpu-cfs-quota?       (.cpuCfsQuota info)
+   :debug?               (.debug info)
+   :docker-root-dir      (.dockerRootDir info)
+   :storage-driver       (.storageDriver info)
+   :driver-status        (.driverStatus info)
+   :experimental-build?  (.experimentalBuild info)
+   :http-proxy           (.httpProxy info)
+   :https-proxy          (.httpsProxy info)
+   :id                   (.id info)
+   :ipv4-forwarding?     (.ipv4Forwarding info)
+   :images               (.images info)
+   :index-server-address (.indexServerAddress info)
+   :init-path            (.initPath info)
+   :init-sha1            (.initSha1 info)
+   :kernel-memory        (.kernelMemory info)
+   :kernel-version       (.kernelVersion info)
+   :labels               (.labels info)
+   :mem-total            (.memTotal info)
+   :mem-limit            (.memoryLimit info)
+   :cpus                 (.cpus info)
+   :even-listeners       (.eventsListener info)
+   :file-descriptors     (.fileDescriptors info)
+   :go-routines          (.goroutines info)
+   :name                 (.name info)
+   :no-proxy             (.noProxy info)
+   :oom-kill-disabled?   (.oomKillDisable info)
+   :operating-system     (.operatingSystem info)
+   :os-type              (.osType info)
+   :plugins              {:networks (.networks (.plugins info))
+                          :volumes  (.volumes (.plugins info))}
+   :registry-config      (format-registry-config (.registryConfig info))
+   :server-version       (.serverVersion info)
+   :swap-limit?          (.swapLimit info)
+   :swarm-info           (format-swarm-info (.swarm info))
+   :system-status        (.systemStatus info)
+   :system-time          (.systemTime info)})
