@@ -67,6 +67,11 @@ Maven
 (docker/ping conn)
 ```
 
+#### Get system-wide Docker info
+```clojure
+(docker/info conn)
+```
+
 #### Build login info with Docker Hub
 ```clojure
 (def login-info (docker/register conn "username" "password"))

@@ -14,7 +14,8 @@
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
 (ns clj-docker-client.core
-  (:require [clj-docker-client.utils :as u])
+  (:require [clj-docker-client.utils :as u]
+            [clj-docker-client.formatters :as f])
   (:import (java.nio.file Paths)
            (com.spotify.docker.client DefaultDockerClient
                                       DockerClient
@@ -22,13 +23,9 @@
                                       DockerClient$BuildParam
                                       DockerClient$ListContainersParam
                                       DockerClient$LogsParam)
-           (com.spotify.docker.client.messages Image
-                                               Container
-                                               Container$PortMapping
-                                               ContainerConfig
+           (com.spotify.docker.client.messages ContainerConfig
                                                HostConfig
                                                ContainerCreation
-                                               ContainerState
                                                RegistryAuth)
            (java.util List)))
 
@@ -59,6 +56,54 @@
       (.password password)
       (.build)))
 
+(defn info
+  "Fetches system wide info about the connected Docker server."
+  [^DockerClient connection]
+  (let [data (.info connection)]
+    {:arch                 (.architecture data)
+     :cluster-store        (.clusterStore data)
+     :cgroup-driver        (.cgroupDriver data)
+     :containers           (.containers data)
+     :running-containers   (.containersRunning data)
+     :paused-containers    (.containersPaused data)
+     :cpu-cfs-period?      (.cpuCfsPeriod data)
+     :cpu-cfs-quota?       (.cpuCfsQuota data)
+     :debug?               (.debug data)
+     :docker-root-dir      (.dockerRootDir data)
+     :storage-driver       (.storageDriver data)
+     :driver-status        (.driverStatus data)
+     :experimental-build?  (.experimentalBuild data)
+     :http-proxy           (.httpProxy data)
+     :https-proxy          (.httpsProxy data)
+     :id                   (.id data)
+     :ipv4-forwarding?     (.ipv4Forwarding data)
+     :images               (.images data)
+     :index-server-address (.indexServerAddress data)
+     :init-path            (.initPath data)
+     :init-sha1            (.initSha1 data)
+     :kernel-memory        (.kernelMemory data)
+     :kernel-version       (.kernelVersion data)
+     :labels               (.labels data)
+     :mem-total            (.memTotal data)
+     :mem-limit            (.memoryLimit data)
+     :cpus                 (.cpus data)
+     :even-listeners       (.eventsListener data)
+     :file-descriptors     (.fileDescriptors data)
+     :go-routines          (.goroutines data)
+     :name                 (.name data)
+     :no-proxy             (.noProxy data)
+     :oom-kill-disabled?   (.oomKillDisable data)
+     :operating-system     (.operatingSystem data)
+     :os-type              (.osType data)
+     :plugins              {:networks (.networks (.plugins data))
+                            :volumes  (.volumes (.plugins data))}
+     :registry-config      (f/format-registry-config (.registryConfig data))
+     :server-version       (.serverVersion data)
+     :swap-limit?          (.swapLimit data)
+     :swarm-info           (f/format-swarm-info (.swarm data))
+     :system-status        (.systemStatus data)
+     :system-time          (.systemTime data)}))
+
 (defn- config-of
   [^String image ^List cmd ^List env-vars]
   (-> (ContainerConfig/builder)
@@ -69,13 +114,6 @@
       (.build)))
 
 ;; Images
-
-(defn- format-image
-  [^Image image]
-  {:id        (u/format-id (.id image))
-   :repo-tags (.repoTags image)
-   :created   (.created image)
-   :size      (.size image)})
 
 (defn pull
   "Pulls an image by *name*.
@@ -123,7 +161,7 @@
          connection
          (into-array DockerClient$ListImagesParam
                      [(DockerClient$ListImagesParam/allImages)]))
-       (mapv format-image)))
+       (mapv f/format-image)))
 
 (defn commit-container
   "Creates an image from the changes of a container by name or id.
@@ -148,42 +186,6 @@
 
 ;; Containers
 
-(defn- format-port-mapping
-  [^Container$PortMapping port-mapping]
-  {:public  (.publicPort port-mapping)
-   :private (.privatePort port-mapping)
-   :type    (keyword (.type port-mapping))
-   :ip      (.ip port-mapping)})
-
-(defn- format-container-ps
-  [^Container container]
-  {:id      (u/format-id (.id container))
-   :names   (mapv #(clojure.string/replace % #"/" "")
-                  (.names container))
-   :image   (.image container)
-   :command (.command container)
-   :state   (keyword (.state container))
-   :status  (.status container)
-   :ports   (mapv format-port-mapping (.ports container))})
-
-(defn- format-env-vars
-  [env-vars]
-  (map #(format "%s=%s" (name (first %)) (last %))
-       env-vars))
-
-(defn- format-state
-  [^ContainerState state]
-  {:status      (keyword (.status state))
-   :running?    (.running state)
-   :paused      (.paused state)
-   :restarting? (.restarting state)
-   :pid         (.pid state)
-   :exit-code   (.exitCode state)
-   :started-at  (.startedAt state)
-   :finished-at (.finishedAt state)
-   :error       (.error state)
-   :oom-killed? (.oomKilled state)})
-
 (defn create
   "Creates a container.
 
@@ -192,7 +194,7 @@
   [^DockerClient connection image cmd env-vars]
   (let [config   (config-of image
                             (u/sh-tokenize! cmd)
-                            (format-env-vars env-vars))
+                            (f/format-env-vars env-vars))
         creation ^ContainerCreation (.createContainer connection config)]
     (u/format-id (.id creation))))
 
@@ -206,7 +208,7 @@
           connection
           (into-array DockerClient$ListContainersParam
                       [(DockerClient$ListContainersParam/allContainers all?)]))
-        (mapv format-container-ps))))
+        (mapv f/format-container-ps))))
 
 (defn start
   "Starts a created container asynchronously by name or id.
@@ -278,7 +280,7 @@
   (-> connection
       (.inspectContainer name)
       (.state)
-      (format-state)))
+      (f/format-state)))
 
 (defn rm
   "Removes a container by name or id.

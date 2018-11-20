@@ -43,10 +43,57 @@
   (let [sha-pattern #"\b[0-9a-f]{5,40}\b"]
     (not (nil? (re-matches sha-pattern id)))))
 
-(deftest test-connection
+(def expected-info-keys
+  [:index-server-address
+   :labels
+   :even-listeners
+   :mem-total
+   :oom-kill-disabled?
+   :experimental-build?
+   :kernel-memory
+   :storage-driver
+   :images
+   :name
+   :swap-limit?
+   :ipv4-forwarding?
+   :arch
+   :driver-status
+   :init-sha1
+   :cgroup-driver
+   :containers
+   :registry-config
+   :init-path
+   :cluster-store
+   :swarm-info
+   :debug?
+   :server-version
+   :id
+   :operating-system
+   :https-proxy
+   :system-status
+   :plugins
+   :no-proxy
+   :cpu-cfs-quota?
+   :go-routines
+   :kernel-version
+   :mem-limit
+   :paused-containers
+   :http-proxy
+   :system-time
+   :cpu-cfs-period?
+   :running-containers
+   :file-descriptors
+   :docker-root-dir
+   :os-type
+   :cpus])
+
+(deftest test-docker-system
   (with-open [conn (connect)]
     (testing "Test ping to a Docker server"
-      (is (= "OK" (ping conn))))))
+      (is (= "OK" (ping conn))))
+    (testing "Docker system info"
+      (let [data (info conn)]
+        (is (= (keys data) expected-info-keys))))))
 
 (deftest test-images
   (with-open [conn (connect)]
