@@ -30,7 +30,6 @@
 (defn sh-tokenize!
   "Tokenizes a shell command given as a string into the command and its args.
   Either returns a list of tokens or throws an IllegalStateException.
-  This is used to parse the step commands received by Bob.
 
   Sample input: sh -c 'while sleep 1; do echo \\\"${RANDOM}\\\"; done'
   Output: [sh, -c, while sleep 1; do echo \"${RANDOM}\"; done]"

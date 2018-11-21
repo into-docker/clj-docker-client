@@ -71,7 +71,7 @@ Auto generated code docs can be found [here](https://cljdoc.org/d/lispyclouds/cl
 #### Ping the Docker server
 ```clojure
 (docker/ping conn)
-=> "Ok"
+=> "OK"
 ```
 
 #### Get system-wide Docker info

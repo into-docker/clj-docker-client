@@ -19,7 +19,6 @@
   (:import (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)
            (java.io File)
-           (com.spotify.docker.client.messages RemovedImage)
            (com.spotify.docker.client DockerClient)))
 
 (def img "busybox:musl")
