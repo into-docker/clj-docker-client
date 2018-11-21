@@ -220,6 +220,15 @@ Auto generated code docs can be found [here](https://cljdoc.org/d/lispyclouds/cl
 => "13c274fc67e6"
 ```
 
+#### Waiting for a container to exit
+```clojure
+(docker/wait-container conn "name or id")
+=> 0 ; Normal exit
+
+(docker/wait-container conn "name or id")
+=> 137 ; Abnormal exit
+```
+
 #### Running from an image directly
 ```clojure
 (docker/run conn "image" "command" {:env "test"}) ; Waits for container exit
@@ -234,6 +243,8 @@ Auto generated code docs can be found [here](https://cljdoc.org/d/lispyclouds/cl
 (docker/logs conn "name or id")
 => ("line 1" "line 2" ...)
 
+```
+```clojure
 ; Drop first 10 lines and take at most 30 lines from it
 (->> (docker/logs conn "name or id")
      (drop 10)
