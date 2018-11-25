@@ -63,6 +63,11 @@ Auto generated code docs can be found [here](https://cljdoc.org/d/lispyclouds/cl
 (def conn (docker/connect))
 ```
 
+#### Creating a connection to a remote Docker daemon
+```clojure
+(def conn (docker/connect "http://192.168.33.10:2375"))
+```
+
 #### Closing the connection to the Docker daemon
 ```clojure
 (docker/disconnect conn)

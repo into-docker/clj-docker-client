@@ -31,12 +31,19 @@
                                                RegistryAuth)
            (java.util List)))
 
+;; TODO: Add more connection options
 (defn connect
-  "Connects to the local Docker daemon with default settings.
+  "Connects to the local/remote Docker daemon with default settings.
 
-  Returns the connection."
-  []
-  (.build (DefaultDockerClient/fromEnv)))
+  Returns the connection.
+
+  Supply the URI as a string with protocol for a remote connection."
+  ([]
+   (.build (DefaultDockerClient/fromEnv)))
+  ([^String uri]
+   (-> (DefaultDockerClient/builder)
+       (.uri uri)
+       (.build))))
 
 (defn disconnect
   "Closes the connection to the Docker server."
