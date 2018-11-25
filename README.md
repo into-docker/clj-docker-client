@@ -73,6 +73,15 @@ Auto generated code docs can be found [here](https://cljdoc.org/d/lispyclouds/cl
 (docker/disconnect conn)
 ```
 
+Connections can be used in the `(with-open)` block
+which closes it after use.
+
+```clojure
+(with-open [conn (docker/connect)]
+  (docker/ping conn))
+=> "OK"
+```
+
 #### Ping the Docker server
 ```clojure
 (docker/ping conn)
