@@ -25,11 +25,8 @@
                                       DockerClient$ListContainersParam
                                       DockerClient$LogsParam
                                       LogMessage)
-           (com.spotify.docker.client.messages ContainerConfig
-                                               HostConfig
-                                               ContainerCreation
-                                               RegistryAuth)
-           (java.util List)))
+           (com.spotify.docker.client.messages ContainerCreation
+                                               RegistryAuth)))
 
 ;; TODO: Add more connection options
 (defn connect
@@ -69,15 +66,6 @@
   "Fetches system wide info about the connected Docker server."
   [^DockerClient connection]
   (f/format-info (.info connection)))
-
-(defn- config-of
-  [^String image ^List cmd ^List env-vars]
-  (-> (ContainerConfig/builder)
-      (.hostConfig (.build (HostConfig/builder)))
-      (.env env-vars)
-      (.image image)
-      (.cmd cmd)
-      (.build)))
 
 ;; Images
 
@@ -149,12 +137,11 @@
       (.commitContainer id
                         repo
                         tag
-                        (config-of (-> connection
-                                       (.inspectContainer id)
-                                       (.config)
-                                       (.image))
-                                   (u/sh-tokenize! command)
-                                   [])
+                        (u/config-of (-> connection
+                                         (.inspectContainer id)
+                                         (.config)
+                                         (.image))
+                                     (u/sh-tokenize! command))
                         nil
                         nil)
       (.id)
@@ -165,12 +152,14 @@
 (defn create
   "Creates a container.
 
-  Takes the image, entry point command and environment vars as a map
-  and returns the id of the created container."
-  [^DockerClient connection image cmd env-vars]
-  (let [config   (config-of image
-                            (u/sh-tokenize! cmd)
-                            (f/format-env-vars env-vars))
+  Takes the image, entry point command, env vars and host->container port mapping.
+
+  Returns the id of the created container."
+  [^DockerClient connection image cmd env-vars exposed-ports]
+  (let [config   (u/config-of image
+                              (u/sh-tokenize! cmd)
+                              (f/format-env-vars env-vars)
+                              exposed-ports)
         creation ^ContainerCreation (.createContainer connection config)]
     (u/format-id (.id creation))))
 
@@ -267,16 +256,16 @@
   (.statusCode (.waitContainer connection name)))
 
 (defn run
-  "Runs a container with a specified image, command and env vars.
+  "Runs a container with a specified image, command, env vars and host->container port mappings.
 
   Returns the container id.
 
   Runs synchronously by default, i.e. waits for the container exit.
   If detached? flag is true, executes asynchronously."
-  ([^DockerClient connection image command env-vars]
-   (run connection image command env-vars false))
-  ([^DockerClient connection image command env-vars detached?]
-   (let [id (->> (create connection image command env-vars)
+  ([^DockerClient connection image command env-vars exposed-ports]
+   (run connection image command env-vars exposed-ports false))
+  ([^DockerClient connection image command env-vars exposed-ports detached?]
+   (let [id (->> (create connection image command env-vars exposed-ports)
                  (start connection))]
      (if (not detached?)
        (do (wait-container connection id)

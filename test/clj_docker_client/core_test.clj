@@ -110,7 +110,7 @@
                               (filter #(= (:id %) id))))))
         (image-rm conn id)))
     (testing "Container commit"
-      (let [id     (create conn img "echo hello" {})
+      (let [id     (create conn img "echo hello" {} {})
             img-id (commit-container conn id "test/test" "latest" "echo hi")]
         (is (correct-id? img-id))
         (is (not (empty? (->> (image-ls conn)
@@ -123,36 +123,40 @@
   (with-open [conn ^DockerClient (connect)]
     (pull conn img)
     (testing "Creating a container"
-      (let [container-id (create conn img "echo hello" {:k "v"})]
+      (let [container-id (create conn img "echo hello" {:k "v"} {})]
         (is (correct-id? container-id))
         (rm conn container-id)))
     (testing "Container lifecycle"
       (let [image "redis:alpine"
             _     (pull conn image)
-            id    (create conn image "redis-server" {})
+            id    (create conn image "redis-server" {} {6379 6379})
             id    (start conn id)
             info  (first (filter #(= id (:id %)) (ps conn true)))]
         (is (correct-id? id))
         (is (= :running (:state info)))
+        (is (= [{:public  6379
+                 :private 6379
+                 :type    :tcp
+                 :ip      "0.0.0.0"}] (:ports info)))
         (kill conn id)
         (rm conn id)
         (image-rm conn image)))
     (testing "Listing the created container"
-      (let [id   (create conn img "echo hello" {:k "v"})
+      (let [id   (create conn img "echo hello" {:k "v"} {})
             info (first (filter #(= id (:id %)) (ps conn true)))]
         (is (= "echo hello" (:command info)))
         (is (= :created (:state info)))
         (is (= img (:image info)))
         (rm conn id)))
     (testing "Logging from a container"
-      (let [id     (create conn img "sh -c 'for i in `seq 1 5`; do echo $i; done'" {})
+      (let [id     (create conn img "sh -c 'for i in `seq 1 5`; do echo $i; done'" {} {})
             _      (start conn id)
             _      (.waitContainer conn id)
             output (logs conn id)]
         (is (= ["1" "2" "3" "4" "5"] output))
         (rm conn id)))
     (testing "Fetching container state"
-      (let [id    (create conn img "echo hello" {})
+      (let [id    (create conn img "echo hello" {} {})
             _     (start conn id)
             _     (.waitContainer conn id)
             state (container-state conn id)]
@@ -160,11 +164,11 @@
         (is (zero? (:exit-code state)))
         (rm conn id)))
     (testing "Running from an image"
-      (let [id (run conn img "echo hello" {})]
+      (let [id (run conn img "echo hello" {} {})]
         (is (correct-id? id))
         (rm conn id)))
     (testing "Removing a container"
-      (let [id (create conn img "echo hello" {:k "v"})
+      (let [id (create conn img "echo hello" {:k "v"} {})
             _  (rm conn id)]
         (is (empty? (filter #(= id (:id %)) (ps conn true))))))
     (image-rm conn img)))

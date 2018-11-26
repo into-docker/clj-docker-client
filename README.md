@@ -164,9 +164,9 @@ which closes it after use.
 
 ### Container Handling
 
-#### Creating a container with the `busybox:musl` image, a command and a env var
+#### Creating a container with the `busybox:musl` image, a command, env vars and host->container port mappings.
 ```clojure
-(docker/create conn "busybox:musl" "echo hello" {:env "testing"})
+(docker/create conn "busybox:musl" "echo hello" {:env "testing"} {8000 8000})
 => "9a9ce5dc847c"
 ```
 
@@ -245,10 +245,10 @@ which closes it after use.
 
 #### Running from an image directly
 ```clojure
-(docker/run conn "image" "command" {:env "test"}) ; Waits for container exit
+(docker/run conn "image" "command" {:env "test"} {8100 8000}) ; Waits for container exit
 => "13c274fc67e6" ; after exit...
 
-(docker/run conn "image" "command" {:env "test"} true) ; Detached, returns immediately
+(docker/run conn "image" "command" {:env "test"} {8100 8000} true) ; Detached, returns immediately
 => "13c274fc67e6" ; immediately
 ```
 

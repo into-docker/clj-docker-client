@@ -13,7 +13,12 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
-(ns clj-docker-client.utils)
+(ns clj-docker-client.utils
+  (:import (com.spotify.docker.client.messages HostConfig
+                                               ContainerConfig
+                                               PortBinding)
+           (java.util List
+                      Set)))
 
 (def id-length 12)
 
@@ -76,3 +81,38 @@
       (if (not= state :no-token)
         (conj args current-arg)
         args))))
+
+(defn port-configs-from
+  [port-mapping]
+  (let [host-ports      (->> port-mapping
+                             (keys)
+                             (map str)
+                             (map #(vector % [(PortBinding/of "0.0.0.0" ^String %)]))
+                             (into {}))
+        container-ports (->> port-mapping
+                             (vals)
+                             (map str)
+                             (into #{}))]
+    {:host-config   (if (empty? host-ports)
+                      (.build (HostConfig/builder))
+                      (-> (HostConfig/builder)
+                          (.portBindings host-ports)
+                          (.build)))
+     :exposed-ports container-ports}))
+
+(defn config-of
+  ([^String image]
+   (config-of image [] [] {}))
+  ([^String image ^List cmd]
+   (config-of image cmd [] {}))
+  ([^String image ^List cmd ^List env-vars]
+   (config-of image cmd env-vars {}))
+  ([^String image ^List cmd ^List env-vars port-bindings]
+   (let [port-config (port-configs-from port-bindings)]
+     (-> (ContainerConfig/builder)
+         (.hostConfig (:host-config port-config))
+         (.env env-vars)
+         (.image image)
+         (.exposedPorts ^Set (:exposed-ports port-config))
+         (.cmd cmd)
+         (.build)))))
