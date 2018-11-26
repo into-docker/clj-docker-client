@@ -19,17 +19,17 @@ the Docker API changes.
 ### Installation
 Leiningen/Boot
 ```clojure
-[lispyclouds/clj-docker-client "0.1.7"]
+[lispyclouds/clj-docker-client "0.1.8"]
 ```
 
 Clojure CLI/deps.edn
 ```clojure
-{lispyclouds/clj-docker-client {:mvn/version "0.1.7"}}
+{lispyclouds/clj-docker-client {:mvn/version "0.1.8"}}
 ```
 
 Gradle
 ```groovy
-compile 'lispyclouds:clj-docker-client:0.1.7'
+compile 'lispyclouds:clj-docker-client:0.1.8'
 ```
 
 Maven
@@ -37,7 +37,7 @@ Maven
 <dependency>
   <groupId>lispyclouds</groupId>
   <artifactId>clj-docker-client</artifactId>
-  <version>0.1.7</version>
+  <version>0.1.8</version>
 </dependency>
 ```
 
