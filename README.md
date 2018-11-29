@@ -3,16 +3,17 @@
 [![License: GPL v3](https://img.shields.io/badge/license-GPL%20v3-blue.svg?style=flat-square)](http://www.gnu.org/licenses/gpl-3.0)
 [![Clojars Project](https://img.shields.io/clojars/v/lispyclouds/clj-docker-client.svg?style=flat-square)](https://clojars.org/lispyclouds/clj-docker-client)
 [![cljdoc badge](https://cljdoc.org/badge/lispyclouds/clj-docker-client)](https://cljdoc.org/d/lispyclouds/clj-docker-client/CURRENT)
+[![Dependencies Status](https://versions.deps.co/lispyclouds/clj-docker-client/status.png)](https://versions.deps.co/lispyclouds/clj-docker-client)
 
 An idiomatic Clojure Docker client based on the excellent JVM [client](https://github.com/spotify/docker-client) by Spotify.
 
 ### Why not use the Spotify lib directly?
 The Spotify lib though being excellent, has Java style vararg method calls,
-non-standard variable passing and undocumented behaviour. This eases out these 
-things to make an idiomatic, clojure friendly API to Docker.   
+non-standard variable passing and undocumented behaviour. This eases out these
+things to make an idiomatic, clojure friendly API to Docker.
 
-This is a work in progress and aims to be fully compliant and up to date with 
-the Docker API changes. 
+This is a work in progress and aims to be fully compliant and up to date with
+the Docker API changes.
 
 **Please raise issues here for any new feature requests!**
 
@@ -179,7 +180,7 @@ which closes it after use.
      :names ["friendly_einstein"]
      :ports [{:ip nil :private 6379 :public 0 :type :tcp}]
      :state :running
-     :status "Up 34 seconds"}] 
+     :status "Up 34 seconds"}]
 
 (docker/ps conn true) ; All containers
 => [{:command "docker-entrypoint.sh redis-server"

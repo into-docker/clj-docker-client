@@ -21,7 +21,7 @@
             :url  "https://www.gnu.org/licenses/gpl-3.0.en.html"}
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [byte-streams "0.2.4"]
-                 [com.spotify/docker-client "8.14.4"]]
+                 [com.spotify/docker-client "8.14.5"]]
   :plugins [[lein-ancient "0.6.15"]]
   :global-vars {*warn-on-reflection* true}
   :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]}})
