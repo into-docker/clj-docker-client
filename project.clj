@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
-(defproject lispyclouds/clj-docker-client "0.1.8"
+(defproject lispyclouds/clj-docker-client "0.1.9"
   :author "Rahul De <rahul@mailbox.org>"
   :url "https://github.com/lispyclouds/clj-docker-client"
   :description "And idiomatic clojure client for Docker."
