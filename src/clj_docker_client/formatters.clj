@@ -21,7 +21,8 @@
                                                Container$PortMapping
                                                Container
                                                ContainerState
-                                               Info)
+                                               Info
+                                               Network)
            (com.spotify.docker.client.messages.swarm SwarmInfo
                                                      SwarmCluster
                                                      SwarmSpec
@@ -204,3 +205,10 @@
    :swarm-info           (format-swarm-info (.swarm info))
    :system-status        (.systemStatus info)
    :system-time          (.systemTime info)})
+
+(defn format-network
+  [^Network network]
+  {:name   (.name network)
+   :id     (u/format-id (.id network))
+   :scope  (.scope network)
+   :driver (.driver network)})

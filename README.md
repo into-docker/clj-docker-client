@@ -292,3 +292,41 @@ which closes it after use.
 (docker/rm conn "id or name" true) ; Force remove non-running container
 => "00873a15ef06"
 ```
+
+### Network Handling
+
+#### Creating a new network
+```clojure
+(docker/network-create conn "sky-net")
+=> "sky-net"
+
+(docker/network-create conn "sky-net" true true) ; Check for duplicates and is attachable.
+=> "sky-net"
+```
+
+#### List all networks
+```clojure
+(docker/network-ls conn)
+=> ({:name "sky-net", :id "408ead00892d", :scope "local", :driver "bridge"}
+    {:name "none", :id "3b2b15102d2d", :scope "local", :driver "null"}
+    {:name "bridge", :id "eb4287b6fe7e", :scope "local", :driver "bridge"}
+    {:name "host", :id "4e4c79263e3f", :scope "local", :driver "host"})
+```
+
+### Connect a container to a network
+```clojure
+(docker/network-connect "sky-net" "container id")
+=> "13c274fc67e6"
+```
+
+### Disconnect a container from a network
+```clojure
+(docker/network-disconnect "sky-net" "container id")
+=> "13c274fc67e6"
+```
+
+### Remove a network
+```clojure
+(docker/network-rm "sky-net")
+=> "sky-net"
+```

@@ -24,9 +24,11 @@
                                       DockerClient$BuildParam
                                       DockerClient$ListContainersParam
                                       DockerClient$LogsParam
-                                      LogMessage)
+                                      LogMessage
+                                      DockerClient$ListNetworksParam)
            (com.spotify.docker.client.messages ContainerCreation
-                                               RegistryAuth)))
+                                               RegistryAuth
+                                               NetworkConfig)))
 
 ;; TODO: Add more connection options
 (defn connect
@@ -283,3 +285,49 @@
          (kill connection name))
        (.removeContainer connection name)
        name)))
+
+;; Networks
+
+(defn network-create
+  "Creates a new docker network with a unique name."
+  ([^DockerClient connection name]
+   (network-create connection name true true))
+  ([^DockerClient connection name check-duplicate?]
+   (network-create connection name check-duplicate? true))
+  ([^DockerClient connection name check-duplicate? attachable?]
+   (let [config (-> (NetworkConfig/builder)
+                    (.checkDuplicate check-duplicate?)
+                    (.attachable attachable?)
+                    (.name name)
+                    (.build))]
+     (do (.createNetwork connection config)
+         name))))
+
+(defn network-rm
+  "Removes a network by name."
+  [^DockerClient connection name]
+  (do (.removeNetwork connection name)
+      name))
+
+(defn network-ls
+  "Lists all networks."
+  [^DockerClient connection]
+  (->> (.listNetworks connection
+                      (into-array DockerClient$ListNetworksParam []))
+       (map f/format-network)))
+
+(defn network-connect
+  "Connects a container to a network.
+
+  Takes the name/id of the container and the name of the network."
+  [^DockerClient connection ^String network ^String container]
+  (do (.connectToNetwork connection container network)
+      container))
+
+(defn network-disconnect
+  "Disconnects a container to a network.
+
+  Takes the name/id of the container and the name of the network."
+  [^DockerClient connection ^String network ^String container]
+  (do (.disconnectFromNetwork connection container network)
+      container))

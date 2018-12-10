@@ -172,3 +172,21 @@
             _  (rm conn id)]
         (is (empty? (filter #(= id (:id %)) (ps conn true))))))
     (image-rm conn img)))
+
+(deftest test-networks
+  (with-open [conn ^DockerClient (connect)]
+    (pull conn img)
+    (testing "Creating a network"
+      (is (= "sky-net" (network-create conn "sky-net"))))
+    (testing "Listing networks"
+      (is (not (empty? (->> (network-ls conn)
+                            (filter #(= (:name %) "sky-net")))))))
+    (let [id (create conn img "echo hello" {} {})]
+      (testing "Connecting a container"
+        (is (correct-id? (network-connect conn "sky-net" id))))
+      (testing "Disconnecting a container"
+        (is (correct-id? (network-disconnect conn "sky-net" id))))
+      (rm conn id))
+    (testing "Removing a network"
+      (is (= "sky-net" (network-rm conn "sky-net"))))
+    (image-rm conn img)))
