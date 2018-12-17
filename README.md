@@ -44,8 +44,8 @@ Maven
 </dependency>
 ```
 
-### Requirements
-- Clojure 1.9+
+### Build Requirements
+- Leiningen 2.8+
 - JDK 1.8+
 
 ### Running tests locally
