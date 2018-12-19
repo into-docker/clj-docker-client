@@ -293,6 +293,12 @@ which closes it after use.
 => "00873a15ef06"
 ```
 
+#### Copying a directory to a container
+```clojure
+(docker/cp conn "id or name" "source path on host" "dest path on container")
+=> "00873a15ef06"
+```
+
 ### Network Handling
 
 #### Creating a new network

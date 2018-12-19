@@ -167,6 +167,11 @@
       (let [id (run conn img "echo hello" {} {})]
         (is (correct-id? id))
         (rm conn id)))
+    (testing "Copying to a container"
+      (let [id     (run conn img "echo hello" {} {})
+            ret-id (cp conn id (System/getProperty "user.dir") "/tmp")]
+        (is (= id ret-id))
+        (rm conn id)))
     (testing "Removing a container"
       (let [id (create conn img "echo hello" {:k "v"} {})
             _  (rm conn id)]

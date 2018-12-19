@@ -18,6 +18,7 @@
             [clj-docker-client.utils :as u]
             [clj-docker-client.formatters :as f])
   (:import (java.nio.file Paths)
+           (java.io File)
            (com.spotify.docker.client DefaultDockerClient
                                       DockerClient
                                       DockerClient$ListImagesParam
@@ -285,6 +286,16 @@
          (kill connection name))
        (.removeContainer connection name)
        name)))
+
+(defn cp
+  "Copies the contents of the host-path to the container by id/name
+  to the container-path inside the container"
+  [^DockerClient connection ^String id ^String host-path ^String container-path]
+  (do (.copyToContainer connection
+                    (.toPath (File. host-path))
+                    id
+                    container-path)
+      id))
 
 ;; Networks
 
