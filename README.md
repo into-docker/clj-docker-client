@@ -319,19 +319,19 @@ which closes it after use.
     {:name "host", :id "4e4c79263e3f", :scope "local", :driver "host"})
 ```
 
-### Connect a container to a network
+#### Connect a container to a network
 ```clojure
 (docker/network-connect "sky-net" "container id")
 => "13c274fc67e6"
 ```
 
-### Disconnect a container from a network
+#### Disconnect a container from a network
 ```clojure
 (docker/network-disconnect "sky-net" "container id")
 => "13c274fc67e6"
 ```
 
-### Remove a network
+#### Remove a network
 ```clojure
 (docker/network-rm "sky-net")
 => "sky-net"
