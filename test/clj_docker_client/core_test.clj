@@ -19,7 +19,8 @@
   (:import (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)
            (java.io File)
-           (com.spotify.docker.client DockerClient)))
+           (com.spotify.docker.client DockerClient)
+           (org.apache.commons.compress.archivers.tar TarArchiveInputStream)))
 
 (def img "busybox:musl")
 
@@ -171,6 +172,11 @@
       (let [id     (run conn img "echo hello" {} {})
             ret-id (cp conn id (System/getProperty "user.dir") "/tmp")]
         (is (= id ret-id))
+        (rm conn id)))
+    (testing "Returning a tar stream of a path"
+      (let [id     (run conn img "touch /tmp/test.txt && echo 'hello' > /tmp/test.txt" {} {})
+            stream (stream-path conn id "/tmp/test.txt")]
+        (is (instance? TarArchiveInputStream stream))
         (rm conn id)))
     (testing "Removing a container"
       (let [id (create conn img "echo hello" {:k "v"} {})

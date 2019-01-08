@@ -22,7 +22,8 @@
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [byte-streams "0.2.4"]
                  [com.spotify/docker-client "8.14.5"]
-                 [ch.qos.logback/logback-classic "1.2.3"]]
+                 [ch.qos.logback/logback-classic "1.2.3"]
+                 [org.apache.commons/commons-compress "1.18"]]
   :plugins [[lein-ancient "0.6.15"]]
   :global-vars {*warn-on-reflection* true}
   :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]}})

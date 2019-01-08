@@ -29,7 +29,8 @@
                                       DockerClient$ListNetworksParam)
            (com.spotify.docker.client.messages ContainerCreation
                                                RegistryAuth
-                                               NetworkConfig)))
+                                               NetworkConfig)
+           (org.apache.commons.compress.archivers.tar TarArchiveInputStream)))
 
 ;; TODO: Add more connection options
 (defn connect
@@ -292,10 +293,16 @@
   to the container-path inside the container"
   [^DockerClient connection ^String id ^String host-path ^String container-path]
   (do (.copyToContainer connection
-                    (.toPath (File. host-path))
-                    id
-                    container-path)
+                        (.toPath (File. host-path))
+                        id
+                        container-path)
       id))
+
+(defn stream-path
+  "Returns a tar stream of a given path in a container by name."
+  [^DockerClient connection ^String id ^String path]
+  (TarArchiveInputStream.
+    (.archiveContainer connection id path)))
 
 ;; Networks
 
