@@ -15,6 +15,7 @@
 
 (ns clj-docker-client.core-test
   (:require [clojure.test :refer :all]
+            [clojure.pprint :refer [pprint]]
             [clj-docker-client.core :refer :all])
   (:import (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)
@@ -42,6 +43,11 @@
   [id]
   (let [sha-pattern #"\b[0-9a-f]{5,40}\b"]
     (not (nil? (re-matches sha-pattern id)))))
+
+(defn correct-ip?
+  [id]
+  (let [ip-pattern #"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"]
+    (not (nil? (re-matches ip-pattern id)))))
 
 (def expected-info-keys
   [:index-server-address
@@ -120,6 +126,7 @@
         (rm conn id)))
     (image-rm conn img)))
 
+
 (deftest test-containers
   (with-open [conn ^DockerClient (connect)]
     (pull conn img)
@@ -178,6 +185,15 @@
             stream (stream-path conn id "/tmp/test.txt")]
         (is (instance? TarArchiveInputStream stream))
         (rm conn id)))
+    (testing "Inspecting a container"
+      (let [container-id (create conn img "echo ok" {} {})
+            _ (start conn container-id)
+            inspect-res (inspect conn container-id)
+            ip (-> inspect-res :network-settings :ip-address)
+            _ (stop conn container-id)
+            _ (rm conn container-id)]
+          (is (not (nil? ip)))
+          (is (correct-ip? ip))))
     (testing "Removing a container"
       (let [id (create conn img "echo hello" {:k "v"} {})
             _  (rm conn id)]
