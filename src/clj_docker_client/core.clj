@@ -349,3 +349,8 @@
   [^DockerClient connection ^String network ^String container]
   (do (.disconnectFromNetwork connection container network)
       container))
+
+(defn inspect
+  "Inspects a container"
+  [^DockerClient connection ^String container]
+  (f/format-inspect (.inspectContainer connection container)))

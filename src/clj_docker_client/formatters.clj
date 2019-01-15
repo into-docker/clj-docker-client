@@ -22,7 +22,9 @@
                                                Container
                                                ContainerState
                                                Info
-                                               Network)
+                                               Network
+                                               ContainerInfo
+                                               NetworkSettings)
            (com.spotify.docker.client.messages.swarm SwarmInfo
                                                      SwarmCluster
                                                      SwarmSpec
@@ -212,3 +214,28 @@
    :id     (u/format-id (.id network))
    :scope  (.scope network)
    :driver (.driver network)})
+
+(defn format-inspect-network [^NetworkSettings network-settings]
+  {:ip-address (.ipAddress network-settings)
+   :ip-prefix-len (.ipPrefixLen network-settings)})
+
+;; TODO missing bunch of interesting fields here
+;; See https://github.com/spotify/docker-client/blob/6580ae844a3be96421dfce78707163526c8ba82c/src/main/java/com/spotify/docker/client/messages/ContainerInfo.java#L147
+(defn format-inspect
+  [^ContainerInfo container-info]
+  {:id (.id container-info)
+   :created (.created container-info)
+   :path (.path container-info)
+   :args (.args container-info)
+   :state (format-state (.state container-info))
+   :image (.image container-info)
+   :resolv-conf-path (.resolvConfPath container-info)
+   :hostname-path (.hostnamePath container-info)
+   :hosts-path (.hostsPath container-info)
+   :log-path (.logPath container-info)
+   :name (.name container-info)
+   :restart-count (.restartCount container-info)
+   :driver (.driver container-info)
+   ;; TODO missing from spotify/docker-client ContainerInfo
+   ;; :platform (.platform container-info)
+   :network-settings (format-inspect-network (.networkSettings container-info))})
