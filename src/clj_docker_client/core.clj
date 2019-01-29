@@ -304,6 +304,11 @@
   (TarArchiveInputStream.
     (.archiveContainer connection id path)))
 
+(defn inspect
+  "Inspects a container"
+  [^DockerClient connection ^String container]
+  (f/format-inspect (.inspectContainer connection container)))
+
 ;; Networks
 
 (defn network-create
@@ -349,8 +354,3 @@
   [^DockerClient connection ^String network ^String container]
   (do (.disconnectFromNetwork connection container network)
       container))
-
-(defn inspect
-  "Inspects a container"
-  [^DockerClient connection ^String container]
-  (f/format-inspect (.inspectContainer connection container)))

@@ -15,7 +15,6 @@
 
 (ns clj-docker-client.core-test
   (:require [clojure.test :refer :all]
-            [clojure.pprint :refer [pprint]]
             [clj-docker-client.core :refer :all])
   (:import (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)

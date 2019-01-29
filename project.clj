@@ -18,7 +18,7 @@
   :url "https://github.com/lispyclouds/clj-docker-client"
   :description "And idiomatic clojure client for Docker."
   :license {:name "LGPL 3.0"
-            :url  "https://www.gnu.org/licenses/gpl-3.0.en.html"}
+            :url  "https://www.gnu.org/licenses/lgpl-3.0.en.html"}
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [byte-streams "0.2.4"]
                  [com.spotify/docker-client "8.14.5"]
