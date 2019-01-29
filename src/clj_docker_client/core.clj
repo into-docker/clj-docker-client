@@ -305,7 +305,7 @@
     (.archiveContainer connection id path)))
 
 (defn inspect
-  "Inspects a container"
+  "Inspects a container by name or id."
   [^DockerClient connection ^String container]
   (f/format-inspect (.inspectContainer connection container)))
 

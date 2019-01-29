@@ -307,6 +307,29 @@ which closes it after use.
            "org.apache.commons.compress.archivers.tar.TarArchiveInputStream@12a9048e"]
 ```
 
+#### Inspecting a container
+```clojure
+(docker/inspect conn "id or name")
+=> {:args [],
+    :path "sh",
+    :network-settings {:ip-address "172.17.0.2", :ip-prefix-len 16},
+    :restart-count 0,
+    :hosts-path "/var/lib/docker/containers/b8526912bf10b2aebda772be45e9d7950ab1fd6f83d62d840657615661daf0f7/hosts",
+    :name "/elastic_shaw",
+    :created #inst"2019-01-29T19:11:13.971-00:00",
+    :state {:paused false,
+            :exit-code 0,
+            :running? true,
+            :oom-killed? false,
+            :started-at #inst"2019-01-29T19:11:14.553-00:00",
+            :restarting? false,
+            :pid 8181,
+            :status :running,
+            :error "",
+            :finished-at #inst"0001-01-01T00:00:00.000-00:00"}
+    ... more info}
+```
+
 ### Network Handling
 
 #### Creating a new network
