@@ -193,6 +193,21 @@
             _ (rm conn container-id)]
           (is (not (nil? ip)))
           (is (correct-ip? ip))))
+    (testing "Port binding with different IP"
+      (let [image "redis:alpine"
+            _     (pull conn image)
+            id    (create conn image "redis-server" {} {"127.0.0.1:6379" "6379"})
+            id    (start conn id)
+            info  (first (filter #(= id (:id %)) (ps conn true)))]
+        (is (correct-id? id))
+        (is (= :running (:state info)))
+        (is (= [{:public  6379
+                 :private 6379
+                 :type    :tcp
+                 :ip      "127.0.0.1"}] (:ports info)))
+        (kill conn id)
+        (rm conn id)
+        (image-rm conn image)))
     (testing "Removing a container"
       (let [id (create conn img "echo hello" {:k "v"} {})
             _  (rm conn id)]
