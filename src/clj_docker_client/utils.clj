@@ -82,12 +82,25 @@
         (conj args current-arg)
         args))))
 
+(defn port-binding-default-public [bind]
+  (if (clojure.string/includes? bind ":")
+    (let [[host port] (clojure.string/split bind #":")]
+      (PortBinding/of host ^String port))
+    (PortBinding/of "0.0.0.0" ^String bind)))
+
+(defn filter-host [s]
+  (if (clojure.string/includes? s ":")
+    (second (clojure.string/split s #":"))
+    s))
+
 (defn port-configs-from
   [port-mapping]
   (let [host-ports      (->> port-mapping
                              (keys)
                              (map str)
-                             (map #(vector % [(PortBinding/of "0.0.0.0" ^String %)]))
+                             (map #(vector % [(port-binding-default-public %)]))
+                             (reduce (fn [acc [k v]]
+                                       (assoc acc (filter-host k) v)) {})
                              (into {}))
         container-ports (->> port-mapping
                              (vals)
