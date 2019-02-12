@@ -169,6 +169,10 @@ which closes it after use.
 
 #### Creating a container with the `busybox:musl` image, a command, env vars and host->container port mappings.
 ```clojure
+(docker/create conn "busybox:musl" "echo hello" {:env "testing"} {"127.0.0.1:8000" 8000})
+=> "9a9ce5dc847c"
+
+; Binds on 0.0.0.0 in the host by default.
 (docker/create conn "busybox:musl" "echo hello" {:env "testing"} {8000 8000})
 => "9a9ce5dc847c"
 ```
