@@ -14,11 +14,13 @@
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
 (ns clj-docker-client.utils
+  (:require [cheshire.core :as json])
   (:import (com.spotify.docker.client.messages HostConfig
                                                ContainerConfig
                                                PortBinding)
            (java.util List
-                      Set)))
+                      Set)
+           (com.fasterxml.jackson.databind ObjectMapper)))
 
 (def id-length 12)
 
@@ -130,3 +132,13 @@
          (.exposedPorts ^Set (:exposed-ports port-config))
          (.cmd cmd)
          (.build)))))
+
+(defn format-env-vars
+  [env-vars]
+  (map #(format "%s=%s" (name (first %)) (last %))
+       env-vars))
+
+(defn spotify-obj->Map
+  [obj]
+  (let [mapper (ObjectMapper.)]
+    (json/parse-string (.writeValueAsString mapper obj) true)))

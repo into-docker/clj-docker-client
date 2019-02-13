@@ -18,7 +18,8 @@
             [clojure.spec.alpha :as s]
             [clojure.test.check.clojure-test :refer [defspec]]
             [clojure.test.check.properties :as prop]
-            [clj-docker-client.utils :refer :all]))
+            [clj-docker-client.utils :refer :all]
+            [clj-docker-client.core :as docker]))
 
 (s/def ::plain-docker-id
   (s/and string?
@@ -36,3 +37,15 @@
   (testing "tokenizing a Shell command with escaped double quotes"
     (is (= (sh-tokenize! "sort -t \"\t\" -k2 test > test-sorted")
            ["sort" "-t" "\t" "-k2" "test" ">" "test-sorted"]))))
+
+(deftest format-env-vars-test
+  (testing "format a map of env vars for Docker"
+    (is (= (format-env-vars {:var1 "val1"
+                             :var2 "val2"})
+           ["var1=val1" "var2=val2"]))))
+
+(deftest spotify-obj-test
+  (testing "converting a spotify docker object to a Map"
+    (let [conn (docker/connect)]
+      (is (= (spotify-obj->Map conn)
+             {:host "localhost"})))))

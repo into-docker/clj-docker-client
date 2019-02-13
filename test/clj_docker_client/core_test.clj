@@ -15,7 +15,8 @@
 
 (ns clj-docker-client.core-test
   (:require [clojure.test :refer :all]
-            [clj-docker-client.core :refer :all])
+            [clj-docker-client.core :refer :all]
+            [clj-docker-client.utils :as u])
   (:import (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)
            (java.io File)
@@ -49,48 +50,50 @@
     (not (nil? (re-matches ip-pattern id)))))
 
 (def expected-info-keys
-  [:index-server-address
-   :labels
-   :even-listeners
-   :mem-total
-   :oom-kill-disabled?
-   :experimental-build?
-   :kernel-memory
-   :storage-driver
-   :images
-   :name
-   :swap-limit?
-   :ipv4-forwarding?
-   :arch
-   :driver-status
-   :init-sha1
-   :cgroup-driver
-   :containers
-   :registry-config
-   :init-path
-   :cluster-store
-   :swarm-info
-   :debug?
-   :server-version
-   :id
-   :operating-system
-   :https-proxy
-   :system-status
-   :plugins
-   :no-proxy
-   :cpu-cfs-quota?
-   :go-routines
-   :kernel-version
-   :mem-limit
-   :paused-containers
-   :http-proxy
-   :system-time
-   :cpu-cfs-period?
-   :running-containers
-   :file-descriptors
-   :docker-root-dir
-   :os-type
-   :cpus])
+  [:ID
+   :MemTotal
+   :ClusterStore
+   :DriverStatus
+   :Labels
+   :Driver
+   :NFd
+   :Architecture
+   :CpuCfsQuota
+   :NGoroutines
+   :Images
+   :Containers
+   :CgroupDriver
+   :ExperimentalBuild
+   :KernelMemory
+   :InitSha1
+   :IndexServerAddress
+   :SystemTime
+   :HttpsProxy
+   :ExecutionDriver
+   :Plugins
+   :SwapLimit
+   :Debug
+   :KernelVersion
+   :NEventsListener
+   :MemoryLimit
+   :OSType
+   :RegistryConfig
+   :ServerVersion
+   :ContainersPaused
+   :OomKillDisable
+   :Name
+   :NoProxy
+   :InitPath
+   :OperatingSystem
+   :ContainersStopped
+   :IPv4Forwarding
+   :Swarm
+   :NCPU
+   :SystemStatus
+   :CpuCfsPeriod
+   :ContainersRunning
+   :DockerRootDir
+   :HttpProxy])
 
 (deftest test-docker-system
   (with-open [conn (connect)]
@@ -113,18 +116,17 @@
     (testing "Listing all images"
       (let [id (build conn (temp-docker-dir) "test")]
         (is (not (empty? (->> (image-ls conn)
-                              (filter #(= (:id %) id))))))
+                              (filter #(= (u/format-id (:Id %)) id))))))
         (image-rm conn id)))
     (testing "Container commit"
       (let [id     (create conn img "echo hello" {} {})
             img-id (commit-container conn id "test/test" "latest" "echo hi")]
         (is (correct-id? img-id))
         (is (not (empty? (->> (image-ls conn)
-                              (filter #(= (:id %)))))))
+                              (filter #(= (u/format-id (:Id %))))))))
         (image-rm conn img-id)
         (rm conn id)))
     (image-rm conn img)))
-
 
 (deftest test-containers
   (with-open [conn ^DockerClient (connect)]
@@ -138,22 +140,22 @@
             _     (pull conn image)
             id    (create conn image "redis-server" {} {6379 6379})
             id    (start conn id)
-            info  (first (filter #(= id (:id %)) (ps conn true)))]
+            info  (first (filter #(= id (u/format-id (:Id %))) (ps conn true)))]
         (is (correct-id? id))
-        (is (= :running (:state info)))
-        (is (= [{:public  6379
-                 :private 6379
-                 :type    :tcp
-                 :ip      "0.0.0.0"}] (:ports info)))
+        (is (= "running" (:State info)))
+        (is (= [{:PublicPort  6379
+                 :PrivatePort 6379
+                 :Type        "tcp"
+                 :IP          "0.0.0.0"}] (:Ports info)))
         (kill conn id)
         (rm conn id)
         (image-rm conn image)))
     (testing "Listing the created container"
       (let [id   (create conn img "echo hello" {:k "v"} {})
-            info (first (filter #(= id (:id %)) (ps conn true)))]
-        (is (= "echo hello" (:command info)))
-        (is (= :created (:state info)))
-        (is (= img (:image info)))
+            info (first (filter #(= id (u/format-id (:Id %))) (ps conn true)))]
+        (is (= "echo hello" (:Command info)))
+        (is (= "created" (:State info)))
+        (is (= img (:Image info)))
         (rm conn id)))
     (testing "Logging from a container"
       (let [id     (create conn img "sh -c 'for i in `seq 1 5`; do echo $i; done'" {} {})
@@ -167,8 +169,8 @@
             _     (start conn id)
             _     (.waitContainer conn id)
             state (container-state conn id)]
-        (is (= :exited (:status state)))
-        (is (zero? (:exit-code state)))
+        (is (= "exited" (:Status state)))
+        (is (zero? (:ExitCode state)))
         (rm conn id)))
     (testing "Running from an image"
       (let [id (run conn img "echo hello" {} {})]
@@ -186,32 +188,32 @@
         (rm conn id)))
     (testing "Inspecting a container"
       (let [container-id (create conn img "echo ok" {} {})
-            _ (start conn container-id)
-            inspect-res (inspect conn container-id)
-            ip (-> inspect-res :network-settings :ip-address)
-            _ (stop conn container-id)
-            _ (rm conn container-id)]
-          (is (not (nil? ip)))
-          (is (correct-ip? ip))))
+            _            (start conn container-id)
+            inspect-res  (inspect conn container-id)
+            ip           (-> inspect-res :NetworkSettings :IPAddress)
+            _            (stop conn container-id)
+            _            (rm conn container-id)]
+        (is (not (nil? ip)))
+        (is (correct-ip? ip))))
     (testing "Port binding with different IP"
       (let [image "redis:alpine"
             _     (pull conn image)
             id    (create conn image "redis-server" {} {"127.0.0.1:6379" "6379"})
             id    (start conn id)
-            info  (first (filter #(= id (:id %)) (ps conn true)))]
+            info  (first (filter #(= id (u/format-id (:Id %))) (ps conn true)))]
         (is (correct-id? id))
-        (is (= :running (:state info)))
-        (is (= [{:public  6379
-                 :private 6379
-                 :type    :tcp
-                 :ip      "127.0.0.1"}] (:ports info)))
+        (is (= "running" (:State info)))
+        (is (= [{:PublicPort  6379
+                 :PrivatePort 6379
+                 :Type        "tcp"
+                 :IP          "127.0.0.1"}] (:Ports info)))
         (kill conn id)
         (rm conn id)
         (image-rm conn image)))
     (testing "Removing a container"
       (let [id (create conn img "echo hello" {:k "v"} {})
             _  (rm conn id)]
-        (is (empty? (filter #(= id (:id %)) (ps conn true))))))
+        (is (empty? (filter #(= id (u/format-id (:Id %))) (ps conn true))))))
     (image-rm conn img)))
 
 (deftest test-networks
@@ -221,7 +223,7 @@
       (is (= "sky-net" (network-create conn "sky-net"))))
     (testing "Listing networks"
       (is (not (empty? (->> (network-ls conn)
-                            (filter #(= (:name %) "sky-net")))))))
+                            (filter #(= (:Name %) "sky-net")))))))
     (let [id (create conn img "echo hello" {} {})]
       (testing "Connecting a container"
         (is (correct-id? (network-connect conn "sky-net" id))))
