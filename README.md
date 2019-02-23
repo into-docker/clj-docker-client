@@ -19,6 +19,14 @@ the Docker API changes.
 
 **Please raise issues here for any new feature requests!**
 
+### Breaking changes in 0.2.0
+This release includes sizable code refactoring and reduction and Docker responses
+from the Spotify lib are auto generated and is used verbatim to provide more info.
+
+This means the key names in the maps are CamelCased not kebab-cased as it reads
+the Java key names directly and auto camel->kebab case conversion in unreliable
+due to inconsistent var names in the Spotify lib.
+
 ### Installation
 Leiningen/Boot
 ```clojure
@@ -94,15 +102,25 @@ which closes it after use.
 #### Get system-wide Docker info
 ```clojure
 (docker/info conn)
-=> {:arch "x86_64"
-    :cgroup-driver "cgroupfs"
-    :cluster-store ""
-    :containers 0
-    :cpu-cfs-period? true
-    :cpu-cfs-quota? true
-    :cpus 4
-    :debug? true
-    :docker-root-dir "/var/lib/docker"
+=> {:Driver             "overlay2"
+    :NFd                26
+    :Architecture       "x86_64"
+    :CpuCfsQuota        true
+    :NGoroutines        53
+    :Images             0
+    :Containers         0
+    :CgroupDriver       "cgroupfs"
+    :ExperimentalBuild  false
+    :KernelMemory       true
+    :InitSha1           nil
+    :IndexServerAddress "https://index.docker.io/v1/"
+    :SystemTime         1550060192024
+    :HttpsProxy         "gateway.docker.internal:3129"
+    :ExecutionDriver    nil
+    :Plugins            {:Volume  ["local"]
+                         :Network ["bridge" "host" "macvlan" "null" "overlay"]}
+    :SwapLimit          true
+    :Debug              true
     other system info...}
 ```
 
@@ -144,14 +162,22 @@ which closes it after use.
 #### Listing all available images
 ```clojure
 (docker/image-ls conn)
-=> [{:created "1538500829"
-     :id "feaa93c97400"
-     :repo-tags ["busybox:musl"]
-     :size 1358201}
-    {:created "1536704390"
-     :id "196d12cf6ab1"
-     :repo-tags ["alpine:latest"]
-     :size 4413370}]
+=> [{:Created     "1548886792",
+     :Id          "sha256:caf27325b298a6730837023a8a342699c8b7b388b8d878966b064a1320043019",
+     :ParentId    "",
+     :RepoTags    ["alpine:latest"],
+     :RepoDigests ["alpine@sha256:b3dbf31b77fd99d9c08f780ce6f5282aba076d70a513a8be859d8d3a4d0c92b8"],
+     :Size        5529164,
+     :VirtualSize 5529164,
+     :Labels      nil}
+    {:Created     "1546305828",
+     :Id          "sha256:3cc47384c4cb779466fe40182420bd90ba761a5f26f8564580a114bcd0dfa911",
+     :ParentId    "",
+     :RepoTags    ["busybox:musl"],
+     :RepoDigests ["busybox@sha256:366488474d5b8dfa2546ec5d220e86029925d6c2e54c3fdf45efbfdd06da8e4d"],
+     :Size        1403257,
+     :VirtualSize 1403257,
+     :Labels      nil}]
 ```
 
 #### Committing changes from a container to a new image
@@ -179,30 +205,53 @@ which closes it after use.
 
 #### Listing all available containers
 ```clojure
-(docker/ps conn) ; Only running containers
-=> [{:command "docker-entrypoint.sh redis-server"
-     :id "13c274fc67e6"
-     :image "redis:alpine"
-     :names ["friendly_einstein"]
-     :ports [{:ip nil :private 6379 :public 0 :type :tcp}]
-     :state :running
-     :status "Up 34 seconds"}]
-
-(docker/ps conn true) ; All containers
-=> [{:command "docker-entrypoint.sh redis-server"
-     :id "13c274fc67e6"
-     :image "redis:alpine"
-     :names ["friendly_einstein"]
-     :ports [{:ip nil :private 6379 :public 0 :type :tcp}]
-     :state :running
-     :status "Up 34 seconds"}
-    {:command "echo hello"
-     :id "9a9ce5dc847c"
-     :image "busybox:musl"
-     :names ["festive_lovelace"]
-     :ports []
-     :state :created
-     :status "Created"}]
+(docker/ps conn) ; Only running containers, pass true for all containers
+=> [{:Ports           [{:PrivatePort 6379, :PublicPort 0, :Type "tcp", :IP nil}],
+     :Image           "redis:alpine",
+     :Labels          {},
+     :Id              "86fd4b8375e3dfac018e37efbddb7b39d3d4b28e1671331a97fb913e7d888f68",
+     :SizeRw          nil,
+     :Mounts          [{:Type        "volume",
+                        :Name        "9669e9b669d5c18ebc8314a4217af4a2207f37d94684ab353b9da87275cad4d1",
+                        :Source      "",
+                        :Destination "/data",
+                        :Driver      "local",
+                        :Mode        "",
+                        :RW          true,
+                        :Propagation ""}],
+     :SizeRootFs      nil,
+     :Command         "docker-entrypoint.sh redis-server",
+     :ImageID         "sha256:a5cff96d7b8f5d3332b43922e424d448172f68b118e0e32cb26270227faec083",
+     :Names           ["/goofy_wilson"],
+     :State           "running",
+     :Created         1550060546,
+     :NetworkSettings {:Ports                  {},
+                       :LinkLocalIPv6Address   nil,
+                       :GlobalIPv6PrefixLen    nil,
+                       :SandboxID              nil,
+                       :IPv6Gateway            nil,
+                       :PortMapping            nil,
+                       :Gateway                nil,
+                       :EndpointID             nil,
+                       :MacAddress             nil,
+                       :IPPrefixLen            nil,
+                       :GlobalIPv6Address      nil,
+                       :Networks               {:bridge {:Aliases             nil,
+                                                         :GlobalIPv6PrefixLen 0,
+                                                         :IPv6Gateway         "",
+                                                         :Gateway             "172.17.0.1",
+                                                         :EndpointID          "6bf4bc46e3cc7cef4325a832be258ce492ed4acad6924c28852f3d8ebd104746",
+                                                         :MacAddress          "02:42:ac:11:00:02",
+                                                         :IPPrefixLen         16,
+                                                         :GlobalIPv6Address   "",
+                                                         :IPAddress           "172.17.0.2",
+                                                         :NetworkID           "0c54060f7a84c94770358434c8ecd4a5078af12157825b91bb2dde68966368c7"}},
+                       :Bridge                 nil,
+                       :HairpinMode            nil,
+                       :SandboxKey             nil,
+                       :IPAddress              nil,
+                       :LinkLocalIPv6PrefixLen nil},
+     :Status          "Up 7 seconds"}]
 ```
 
 #### Starting a container
@@ -276,16 +325,17 @@ which closes it after use.
 #### Getting the current container state
 ```clojure
 (docker/container-state conn "name or id")
-=> {:error ""
-    :exit-code 0
-    :finished-at #inst "2018-11-20T20:41:46.904-00:00"
-    :oom-killed? false
-    :paused false
-    :pid 0
-    :restarting? false
-    :running? false
-    :started-at #inst "2018-11-20T20:41:46.813-00:00"
-    :status :exited}
+=> {:Restarting false,
+    :ExitCode   0,
+    :Running    true,
+    :Pid        12552,
+    :StartedAt  1550060547196,
+    :Paused     false,
+    :Error      "",
+    :FinishedAt -62135769600000,
+    :OOMKilled  false,
+    :Health     nil,
+    :Status     "running"}
 ```
 
 #### Removing a container
@@ -314,23 +364,37 @@ which closes it after use.
 #### Inspecting a container
 ```clojure
 (docker/inspect conn "id or name")
-=> {:args [],
-    :path "sh",
-    :network-settings {:ip-address "172.17.0.2", :ip-prefix-len 16},
-    :restart-count 0,
-    :hosts-path "/var/lib/docker/containers/b8526912bf10b2aebda772be45e9d7950ab1fd6f83d62d840657615661daf0f7/hosts",
-    :name "/elastic_shaw",
-    :created #inst"2019-01-29T19:11:13.971-00:00",
-    :state {:paused false,
-            :exit-code 0,
-            :running? true,
-            :oom-killed? false,
-            :started-at #inst"2019-01-29T19:11:14.553-00:00",
-            :restarting? false,
-            :pid 8181,
-            :status :running,
-            :error "",
-            :finished-at #inst"0001-01-01T00:00:00.000-00:00"}
+=> {:HostsPath    "/var/lib/docker/containers/86fd4b8375e3dfac018e37efbddb7b39d3d4b28e1671331a97fb913e7d888f68/hosts"
+    :ProcessLabel ""
+    :Path         "docker-entrypoint.sh"
+    :Config       {:OnBuild          nil
+                   :Env              ["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                                      "REDIS_VERSION=5.0.3"
+                                      "REDIS_DOWNLOAD_URL=http://download.redis.io/releases/redis-5.0.3.tar.gz"
+                                      "REDIS_DOWNLOAD_SHA=e290b4ddf817b26254a74d5d564095b11f9cd20d8f165459efa53eb63cd93e02"]
+                   :OpenStdin        false
+                   :Image            "redis:alpine"
+                   :Labels           {}
+                   :Entrypoint       ["docker-entrypoint.sh"]
+                   :Healthcheck      nil
+                   :Tty              false
+                   :WorkingDir       "/data"
+                   :HostConfig       nil
+                   :AttachStderr     true
+                   :AttachStdout     true
+                   :Domainname       ""
+                   :StopSignal       nil
+                   :Hostname         "86fd4b8375e3"
+                   :ExposedPorts     ["6379/tcp"]
+                   :MacAddress       nil
+                   :NetworkDisabled  nil
+                   :User             ""
+                   :AttachStdin      false
+                   :StdinOnce        false
+                   :Volumes          ["/data"]
+                   :NetworkingConfig nil
+                   :PortSpecs        nil
+                   :Cmd              ["redis-server"]}
     ... more info}
 ```
 
@@ -348,10 +412,55 @@ which closes it after use.
 #### List all networks
 ```clojure
 (docker/network-ls conn)
-=> ({:name "sky-net", :id "408ead00892d", :scope "local", :driver "bridge"}
-    {:name "none", :id "3b2b15102d2d", :scope "local", :driver "null"}
-    {:name "bridge", :id "eb4287b6fe7e", :scope "local", :driver "bridge"}
-    {:name "host", :id "4e4c79263e3f", :scope "local", :driver "host"})
+=> ({:IPAM       {:Driver "default", :Config [], :Options nil},
+     :Labels     {},
+     :Driver     "null",
+     :Id         "3b2b15102d2df9a1dd7dec6fac1a1164892cc3bd999266523e739e634d39a13f",
+     :EnableIPv6 false,
+     :Containers {},
+     :Scope      "local",
+     :Attachable false,
+     :Options    {},
+     :Internal   false,
+     :Name       "none"
+     {:IPAM       {:Driver "default", :Config [], :Options nil},
+      :Labels     {},
+      :Driver     "host",
+      :Id         "4e4c79263e3faff02062c6dd9953fb3e35d199e197f268034a4176b907712ba0",
+      :EnableIPv6 false,
+      :Containers {},
+      :Scope      "local",
+      :Attachable false,
+      :Options    {},
+      :Internal   false,
+      :Name       "host"
+                 {:IPAM       {:Driver "default", :Config [{:Subnet "172.17.0.0/16", :IPRange nil, :Gateway "172.17.0.1"}], :Options nil},
+                  :Labels     {},
+                  :Driver     "bridge",
+                  :Id         "0c54060f7a84c94770358434c8ecd4a5078af12157825b91bb2dde68966368c7",
+                  :EnableIPv6 false,
+                  :Containers {},
+                  :Scope      "local",
+                  :Attachable false,
+                  :Options    {:com.docker.network.bridge.default_bridge       "true",
+                               :com.docker.network.bridge.enable_icc           "true",
+                               :com.docker.network.bridge.enable_ip_masquerade "true",
+                               :com.docker.network.bridge.host_binding_ipv4    "0.0.0.0",
+                               :com.docker.network.bridge.name                 "docker0",
+                               :com.docker.network.driver.mtu                  "1500"},
+                  :Internal   false,
+                  :Name       "bridge"}}
+     {:IPAM       {:Driver "default", :Config [{:Subnet "172.20.0.0/16", :IPRange nil, :Gateway "172.20.0.1"}], :Options {}},
+      :Labels     {},
+      :Driver     "bridge",
+      :Id         "df99a33349c5a5f6a93d631bd0bd5f033710bde1d31ede3c48410d0c8e4b705f",
+      :EnableIPv6 false,
+      :Containers {},
+      :Scope      "local",
+      :Attachable false,
+      :Options    {},
+      :Internal   false,
+      :Name       "sky-net"}})
 ```
 
 #### Connect a container to a network

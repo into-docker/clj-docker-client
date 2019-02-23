@@ -15,8 +15,7 @@
 
 (ns clj-docker-client.core
   (:require [byte-streams :as bs]
-            [clj-docker-client.utils :as u]
-            [clj-docker-client.formatters :as f])
+            [clj-docker-client.utils :as u])
   (:import (java.nio.file Paths)
            (java.io File)
            (com.spotify.docker.client DefaultDockerClient
@@ -69,7 +68,7 @@
 (defn info
   "Fetches system wide info about the connected Docker server."
   [^DockerClient connection]
-  (f/format-info (.info connection)))
+  (u/spotify-obj->Map (.info connection)))
 
 ;; Images
 
@@ -129,7 +128,7 @@
          connection
          (into-array DockerClient$ListImagesParam
                      [(DockerClient$ListImagesParam/allImages)]))
-       (mapv f/format-image)))
+       (mapv u/spotify-obj->Map)))
 
 (defn commit-container
   "Creates an image from the changes of a container by name or id.
@@ -162,7 +161,7 @@
   [^DockerClient connection image cmd env-vars exposed-ports]
   (let [config   (u/config-of image
                               (u/sh-tokenize! cmd)
-                              (f/format-env-vars env-vars)
+                              (u/format-env-vars env-vars)
                               exposed-ports)
         creation ^ContainerCreation (.createContainer connection config)]
     (u/format-id (.id creation))))
@@ -177,7 +176,7 @@
           connection
           (into-array DockerClient$ListContainersParam
                       [(DockerClient$ListContainersParam/allContainers all?)]))
-        (mapv f/format-container-ps))))
+        (mapv u/spotify-obj->Map))))
 
 (defn start
   "Starts a created container asynchronously by name or id.
@@ -252,7 +251,7 @@
   (-> connection
       (.inspectContainer name)
       (.state)
-      (f/format-state)))
+      (u/spotify-obj->Map)))
 
 (defn wait-container
   "Waits for the exit of a container by id or name."
@@ -307,7 +306,7 @@
 (defn inspect
   "Inspects a container by name or id."
   [^DockerClient connection ^String container]
-  (f/format-inspect (.inspectContainer connection container)))
+  (u/spotify-obj->Map (.inspectContainer connection container)))
 
 ;; Networks
 
@@ -337,7 +336,7 @@
   [^DockerClient connection]
   (->> (.listNetworks connection
                       (into-array DockerClient$ListNetworksParam []))
-       (map f/format-network)))
+       (map u/spotify-obj->Map)))
 
 (defn network-connect
   "Connects a container to a network.
