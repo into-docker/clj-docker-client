@@ -30,17 +30,17 @@ due to inconsistent var names in the Spotify lib.
 ### Installation
 Leiningen/Boot
 ```clojure
-[lispyclouds/clj-docker-client "0.1.13"]
+[lispyclouds/clj-docker-client "0.2.0"]
 ```
 
 Clojure CLI/deps.edn
 ```clojure
-{lispyclouds/clj-docker-client {:mvn/version "0.1.13"}}
+{lispyclouds/clj-docker-client {:mvn/version "0.2.0"}}
 ```
 
 Gradle
 ```groovy
-compile 'lispyclouds:clj-docker-client:0.1.13'
+compile 'lispyclouds:clj-docker-client:0.2.0'
 ```
 
 Maven
@@ -48,7 +48,7 @@ Maven
 <dependency>
   <groupId>lispyclouds</groupId>
   <artifactId>clj-docker-client</artifactId>
-  <version>0.1.13</version>
+  <version>0.2.0</version>
 </dependency>
 ```
 
