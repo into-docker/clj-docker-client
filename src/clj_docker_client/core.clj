@@ -155,7 +155,13 @@
 (defn create
   "Creates a container.
 
-  Takes the image, entry point command, env vars and host->container port mapping.
+  Takes the following as params:
+  - image
+  - entry point command
+  - env vars, optional
+  - host->container port mapping, optional
+  - working dir, optional
+  - user, optional
 
   Returns the id of the created container."
   ([connection image]
