@@ -199,7 +199,7 @@ which closes it after use.
 => "9a9ce5dc847c"
 
 ; Binds on 0.0.0.0 in the host by default.
-(docker/create conn "busybox:musl" "echo hello" {:env "testing"} {8000 8000})
+(docker/create conn "busybox:musl" "echo hello" {:env "testing"} {8000 8000} "/working/dir" "user")
 => "9a9ce5dc847c"
 ```
 

@@ -164,6 +164,13 @@
             output (logs conn id)]
         (is (= ["1" "2" "3" "4" "5"] output))
         (rm conn id)))
+    (testing "Creation with working dir and user"
+      (let [id     (create conn img "sh -c 'pwd && whoami'" {} {} "/tmp" "root")
+            _      (start conn id)
+            _      (.waitContainer conn id)
+            output (logs conn id)]
+        (is (= ["/tmp" "root"] output)
+            (rm conn id))))
     (testing "Fetching container state"
       (let [id    (create conn img "echo hello" {} {})
             _     (start conn id)

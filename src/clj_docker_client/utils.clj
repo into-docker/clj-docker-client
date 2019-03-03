@@ -118,12 +118,12 @@
 
 (defn config-of
   ([^String image]
-   (config-of image [] [] {}))
+   (config-of image [] [] {} nil nil))
   ([^String image ^List cmd]
-   (config-of image cmd [] {}))
+   (config-of image cmd [] {} nil nil))
   ([^String image ^List cmd ^List env-vars]
-   (config-of image cmd env-vars {}))
-  ([^String image ^List cmd ^List env-vars port-bindings]
+   (config-of image cmd env-vars {} nil nil))
+  ([^String image ^List cmd ^List env-vars port-bindings ^String working-dir ^String user]
    (let [port-config (port-configs-from port-bindings)]
      (-> (ContainerConfig/builder)
          (.hostConfig (:host-config port-config))
@@ -131,6 +131,8 @@
          (.image image)
          (.exposedPorts ^Set (:exposed-ports port-config))
          (.cmd cmd)
+         (.workingDir working-dir)
+         (.user user)
          (.build)))))
 
 (defn format-env-vars
