@@ -28,8 +28,7 @@
                                       DockerClient$ListNetworksParam)
            (com.spotify.docker.client.messages ContainerCreation
                                                RegistryAuth
-                                               NetworkConfig)
-           (org.apache.commons.compress.archivers.tar TarArchiveInputStream)))
+                                               NetworkConfig)))
 
 ;; TODO: Add more connection options
 (defn connect
@@ -316,10 +315,14 @@
       id))
 
 (defn stream-path
-  "Returns a tar stream of a given path in a container by name."
+  "Returns a input stream of a given path in a container by name.
+
+  The stream points to a tar archive of the supplied path.
+
+  Create a TarArchiveInputStream from this to process the archived
+  files."
   [^DockerClient connection ^String id ^String path]
-  (TarArchiveInputStream.
-    (.archiveContainer connection id path)))
+  (.archiveContainer connection id path))
 
 (defn inspect
   "Inspects a container by name or id."

@@ -19,9 +19,8 @@
             [clj-docker-client.utils :as u])
   (:import (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)
-           (java.io File)
-           (com.spotify.docker.client DockerClient)
-           (org.apache.commons.compress.archivers.tar TarArchiveInputStream)))
+           (java.io File InputStream)
+           (com.spotify.docker.client DockerClient)))
 
 (def img "busybox:musl")
 
@@ -191,7 +190,7 @@
     (testing "Returning a tar stream of a path"
       (let [id     (run conn img "touch /tmp/test.txt && echo 'hello' > /tmp/test.txt" {} {})
             stream (stream-path conn id "/tmp/test.txt")]
-        (is (instance? TarArchiveInputStream stream))
+        (is (instance? InputStream stream))
         (rm conn id)))
     (testing "Inspecting a container"
       (let [container-id (create conn img "echo ok" {} {})
