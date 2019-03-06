@@ -353,12 +353,14 @@ which closes it after use.
 => "00873a15ef06"
 ```
 
-#### Getting a tar stream from a path in a container
+#### Getting an InputStream from a path in a container
+Returns an InputStream to the tar archive of the path.
+Create a TarArchiveInputStream to process the file(s) in it.
 ```clojure
 (docker/stream-path conn "id or name" "path on container")
-=> #object[org.apache.commons.compress.archivers.tar.TarArchiveInputStream
-           0x12a9048e
-           "org.apache.commons.compress.archivers.tar.TarArchiveInputStream@12a9048e"]
+=> #object[org.glassfish.jersey.message.internal.EntityInputStream
+           0x6c3522c0
+           "org.glassfish.jersey.message.internal.EntityInputStream@6c3522c0"]
 ```
 
 #### Inspecting a container
