@@ -329,6 +329,13 @@
   [^DockerClient connection ^String container]
   (u/spotify-obj->Map (.inspectContainer connection container)))
 
+(defn stats
+  "Returns the resource stats of a created container by name or id/name."
+  [^DockerClient connection name]
+  (-> connection
+      (.stats name)
+      (u/ContainerStats->Map name)))
+
 ;; Networks
 
 (defn network-create
