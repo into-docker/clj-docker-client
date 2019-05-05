@@ -201,6 +201,17 @@
             _            (rm conn container-id)]
         (is (not (nil? ip)))
         (is (correct-ip? ip))))
+    (testing "Taking stats of a container"
+      (let [container-id (create conn img "sleep 10" {} {})
+            _ (start conn container-id)
+            stat-res-1 (stats conn container-id)
+            stat-res-2 (stats conn container-id)
+            _ (stop conn container-id)
+            _ (rm conn container-id)]
+        (is (nil? (:cpu-pct stat-res-1)))
+        (is (not (nil? (:cpu-pct stat-res-2))))
+        (is (double? (:mem-mib stat-res-1)))
+        (is (double? (:mem-pct stat-res-1)))))
     (testing "Port binding with different IP"
       (let [image "redis:alpine"
             _     (pull conn image)

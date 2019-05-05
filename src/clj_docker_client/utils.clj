@@ -17,12 +17,17 @@
   (:require [cheshire.core :as json])
   (:import (com.spotify.docker.client.messages HostConfig
                                                ContainerConfig
-                                               PortBinding)
+                                               PortBinding
+                                               ContainerStats
+                                               MemoryStats
+                                               CpuStats)
            (java.util List
                       Set)
            (com.fasterxml.jackson.databind ObjectMapper)))
 
 (def id-length 12)
+(def bytes-in-mb (* 1024. 1024.))
+(def old-cpu-map (atom {}))
 
 (defn format-id
   "Return docker SHA256 ids in the standard length"
@@ -144,3 +149,44 @@
   [obj]
   (let [mapper (ObjectMapper.)]
     (json/parse-string (.writeValueAsString mapper obj) true)))
+
+(defn cpu-percentage
+  "Will deliver the percentage cpu time used compared to cpu available.
+  Takes the difference with the previous call, might sometimes give 0 when called repeatedly.
+  Will always return nil on the first call."
+  [old-map new-map name]
+  (let [^CpuStats old-cpu (get old-map name)
+        ^CpuStats new-cpu (get new-map name)]
+    (if (or (nil? old-cpu) (nil? new-cpu) (nil? (.systemCpuUsage new-cpu)) (nil? (.systemCpuUsage old-cpu)))
+      nil
+      (let [used-cpu (- (.totalUsage (.cpuUsage new-cpu)) (.totalUsage (.cpuUsage old-cpu)))
+            sytem-used (- (.systemCpuUsage new-cpu) (.systemCpuUsage old-cpu))]
+        (double (* 100 (/ used-cpu sytem-used)))
+        ))))
+
+(defn taken-mem-bytes
+  "Returns the memory taken by the container, excluding the cache as that could be freed when needed"
+  [^MemoryStats mem-stats]
+  (- (.usage mem-stats) (.totalCache (.stats mem-stats))))
+
+(defn mem-mib
+  "Returns the memory taken by the container in MiB"
+  [^MemoryStats mem-stats]
+  (double (/ (taken-mem-bytes mem-stats) bytes-in-mb)))
+
+(defn mem-pct
+  "Returns the memory taken as percentage of the total available memory"
+  [^MemoryStats mem-stats]
+  (double (* 100 (/ (taken-mem-bytes mem-stats) (.limit mem-stats)))))
+
+(defn ContainerStats->Map
+  "Will turn the stats into just cpu and memory stats, in a similar output 'docker stats' gives"
+  [^ContainerStats stats name]
+  (let [mem-stats (.memoryStats stats)
+        [old-map new-map] (swap-vals! old-cpu-map assoc name (.cpuStats stats))]
+    (if (nil? (.usage mem-stats))
+      nil
+      {:cpu-pct (cpu-percentage old-map new-map name)
+       :mem-mib (mem-mib mem-stats)
+       :mem-pct (mem-pct mem-stats)})
+    ))
