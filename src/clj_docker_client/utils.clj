@@ -159,10 +159,9 @@
         ^CpuStats new-cpu (get new-map name)]
     (if (or (nil? old-cpu) (nil? new-cpu) (nil? (.systemCpuUsage new-cpu)) (nil? (.systemCpuUsage old-cpu)))
       nil
-      (let [used-cpu (- (.totalUsage (.cpuUsage new-cpu)) (.totalUsage (.cpuUsage old-cpu)))
-            sytem-used (- (.systemCpuUsage new-cpu) (.systemCpuUsage old-cpu))]
-        (double (* 100 (/ used-cpu sytem-used)))
-        ))))
+      (let [used-cpu    (- (.totalUsage (.cpuUsage new-cpu)) (.totalUsage (.cpuUsage old-cpu)))
+            system-used (- (.systemCpuUsage new-cpu) (.systemCpuUsage old-cpu))]
+        (double (* 100 (/ used-cpu system-used)))))))
 
 (defn taken-mem-bytes
   "Returns the memory taken by the container, excluding the cache as that could be freed when needed"
@@ -188,5 +187,4 @@
       nil
       {:cpu-pct (cpu-percentage old-map new-map name)
        :mem-mib (mem-mib mem-stats)
-       :mem-pct (mem-pct mem-stats)})
-    ))
+       :mem-pct (mem-pct mem-stats)})))

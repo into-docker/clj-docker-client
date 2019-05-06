@@ -400,6 +400,14 @@ Create a TarArchiveInputStream to process the file(s) in it.
     ... more info}
 ```
 
+#### Getting container stats
+```clojure
+(stats conn "id or name")
+=> {:cpu-pct 0.0
+    :mem-mib 23.40234375
+    :mem-pct 0.5928601469533163}
+```
+
 ### Network Handling
 
 #### Creating a new network
