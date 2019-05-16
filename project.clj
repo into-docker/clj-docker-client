@@ -21,7 +21,7 @@
             :url  "https://www.gnu.org/licenses/lgpl-3.0.en.html"}
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [byte-streams "0.2.4"]
-                 [com.spotify/docker-client "8.15.2"]
+                 [com.spotify/docker-client "8.16.0"]
                  [ch.qos.logback/logback-classic "1.2.3"]
                  [cheshire "5.8.1"]]
   :plugins [[lein-ancient "0.6.15"]]
