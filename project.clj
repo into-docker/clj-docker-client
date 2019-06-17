@@ -19,7 +19,7 @@
   :description "An idiomatic clojure client for Docker."
   :license {:name "LGPL 3.0"
             :url  "https://www.gnu.org/licenses/lgpl-3.0.en.html"}
-  :dependencies [[org.clojure/clojure "1.10.0"]
+  :dependencies [[org.clojure/clojure "1.10.1"]
                  [byte-streams "0.2.4"]
                  [com.spotify/docker-client "8.16.0"]
                  [ch.qos.logback/logback-classic "1.2.3"]
