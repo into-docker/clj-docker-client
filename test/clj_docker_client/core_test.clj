@@ -208,10 +208,10 @@
             stat-res-2 (stats conn container-id)
             _ (stop conn container-id)
             _ (rm conn container-id)]
-        (is (nil? (:cpu-pct stat-res-1)))
-        (is (not (nil? (:cpu-pct stat-res-2))))
-        (is (double? (:mem-mib stat-res-1)))
-        (is (double? (:mem-pct stat-res-1)))))
+        (is (nil? (:CpuPct stat-res-1)))
+        (is (not (nil? (:CpuPct stat-res-2))))
+        (is (double? (:MemMib stat-res-1)))
+        (is (double? (:MemPct stat-res-1)))))
     (testing "Port binding with different IP"
       (let [image "redis:alpine"
             _     (pull conn image)

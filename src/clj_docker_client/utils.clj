@@ -185,6 +185,6 @@
         [old-map new-map] (swap-vals! old-cpu-map assoc name (.cpuStats stats))]
     (if (nil? (.usage mem-stats))
       nil
-      {:cpu-pct (cpu-percentage old-map new-map name)
-       :mem-mib (mem-mib mem-stats)
-       :mem-pct (mem-pct mem-stats)})))
+      {:CpuPct (cpu-percentage old-map new-map name)
+       :MemMib (mem-mib mem-stats)
+       :MemPct (mem-pct mem-stats)})))
