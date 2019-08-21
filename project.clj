@@ -23,7 +23,7 @@
                  [byte-streams "0.2.4"]
                  [com.spotify/docker-client "8.16.0"]
                  [ch.qos.logback/logback-classic "1.2.3"]
-                 [cheshire "5.8.1"]]
+                 [cheshire "5.9.0"]]
   :plugins [[lein-ancient "0.6.15"]]
   :global-vars {*warn-on-reflection* true}
   :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]}})
