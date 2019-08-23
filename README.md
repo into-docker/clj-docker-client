@@ -20,7 +20,7 @@ the Docker API changes.
 **Please raise issues here for any new feature requests!**
 
 ### Breaking changes in 0.3.0
-- Switched to [docker-java](https://github.com/docker-java/docker-java) from [docker-client](https://github.com/spotify/docker-client)  
+- Switched to [docker-java](https://github.com/docker-java/docker-java) from [docker-client](https://github.com/spotify/docker-client)
 - Removal of separate login method in favor of credentials in daemon connect
 - More detailed outputs with case changes
 - Provision for async methods with callbacks for streaming APIs like stats and log
@@ -309,7 +309,7 @@ Takes a callback which is notified of Logs _as the appear_
 
 **THIS BLOCKS UNTIL THE CONTAINER IS FINISHED**
 ```clojure
-(docker/logs conn "name or id" #(println %))
+(docker/logs-live conn "name or id" #(println %))
 => "line 1"
    "line 2"
    ...
@@ -479,7 +479,7 @@ Takes a callback which is notified of Statistics/second.
 
 **THIS BLOCKS UNTIL THE CONTAINER IS FINISHED**
 ```clojure
-(docker/stats conn "name or id" #(println %))
+(docker/stats-live conn "name or id" #(println %))
 => {:stats ...}
    {:stats ...}
    ...
