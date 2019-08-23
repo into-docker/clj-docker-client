@@ -289,7 +289,7 @@ which closes it after use.
 => "13c274fc67e6" ; immediately
 ```
 
-#### Lazily getting logs from a container
+#### Getting logs from a container
 ```clojure
 (docker/logs conn "name or id")
 => ("line 1" "line 2" ...)
@@ -301,6 +301,18 @@ which closes it after use.
      (drop 10)
      (take 30))
 => ("line 11" "line 12" ...)
+```
+
+#### Live logs from a container
+
+Takes a callback which is notified of Logs _as the appear_
+
+**THIS BLOCKS UNTIL THE CONTAINER IS FINISHED**
+```clojure
+(docker/logs conn "name or id" #(println %))
+=> "line 1"
+   "line 2"
+   ...
 ```
 
 #### Getting the current container state
@@ -459,6 +471,18 @@ Create a TarArchiveInputStream to process the file(s) in it.
                    :online_cpus nil,
                    :throttling_data {:periods 0, :throttled_periods 0, :throttled_time 0}},
     :pids_stats {:current 7}}}
+```
+
+#### Live stats from a container
+
+Takes a callback which is notified of Statistics/second.
+
+**THIS BLOCKS UNTIL THE CONTAINER IS FINISHED**
+```clojure
+(docker/stats conn "name or id" #(println %))
+=> {:stats ...}
+   {:stats ...}
+   ...
 ```
 
 ### Network Handling

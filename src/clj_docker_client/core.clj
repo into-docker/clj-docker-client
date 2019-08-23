@@ -278,6 +278,21 @@
     (->> @log-acc
          (map clojure.string/trim))))
 
+(defn logs-live
+  "Live version of logs, takes a callback to be notified of Logs as the appear.
+
+  Attaches to the container and blocks until the attached container is finished."
+  [^DockerClient connection name callback]
+  (let [log-callback (proxy [LogContainerResultCallback] []
+                       (onNext [^Frame frame]
+                         (callback (String. (.getPayload frame)))))]
+    (-> (.logContainerCmd connection name)
+        (.withStdOut true)
+        (.withStdErr true)
+        (.withFollowStream true)
+        (.exec log-callback))
+    (.awaitCompletion log-callback)))
+
 (defn container-state
   "Returns the current state of a created container by name or id."
   [^DockerClient connection name]
@@ -352,7 +367,9 @@
       (u/->Map)))
 
 (defn stats
-  "Returns the resource stats of a created container by name or id/name."
+  "Returns the resource stats of a created container by name or id/name.
+
+  Samples for 1 second by default. Pass sample-duration to change"
   ([^DockerClient connection name]
    (stats connection name 1))
   ([^DockerClient connection name sample-duration]
@@ -364,6 +381,18 @@
          (.exec callback)
          (.awaitCompletion sample-duration (TimeUnit/SECONDS)))
      @stats-acc)))
+
+(defn stats-live
+  "Live version of stats, takes a callback to be notified of Stats as the appear.
+
+  Attaches to the container and blocks until the attached container is finished."
+  [^DockerClient connection name callback]
+  (let [stats-callback (proxy [ResultCallbackTemplate] []
+                         (onNext [^Statistics stats]
+                           (callback (u/->Map stats))))]
+    (-> (.statsCmd connection name)
+        (.exec stats-callback))
+    (.awaitCompletion stats-callback)))
 
 ;; Networks
 
