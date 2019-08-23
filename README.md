@@ -7,10 +7,10 @@
 [![Dependencies Status](https://versions.deps.co/lispyclouds/clj-docker-client/status.png)](https://versions.deps.co/lispyclouds/clj-docker-client)
 [![Downloads](https://versions.deps.co/lispyclouds/clj-docker-client/downloads.svg)](https://versions.deps.co/lispyclouds/clj-docker-client)
 
-An idiomatic Clojure Docker client based on the excellent JVM [client](https://github.com/spotify/docker-client) by Spotify.
+An idiomatic Clojure Docker client based on [docker-java](https://github.com/docker-java/docker-java)
 
-### Why not use the Spotify lib directly?
-The Spotify lib though being excellent, has Java style vararg method calls,
+### Why not use the Java lib directly?
+The lib though being excellent, has Java style vararg method calls,
 non-standard variable passing and undocumented behaviour. This eases out these
 things to make an idiomatic, clojure friendly API to Docker.
 
@@ -18,6 +18,12 @@ This is a work in progress and aims to be fully compliant and up to date with
 the Docker API changes.
 
 **Please raise issues here for any new feature requests!**
+
+### Breaking changes in 0.3.0
+- Switched to [docker-java](https://github.com/docker-java/docker-java) from [docker-client](https://github.com/spotify/docker-client)  
+- Removal of separate login method in favor of credentials in daemon connect
+- More detailed outputs with case changes
+- Provision for async methods with callbacks for streaming APIs like stats and log
 
 ### Breaking changes in 0.2.0
 This release includes sizable code refactoring and reduction and Docker responses
@@ -124,11 +130,6 @@ which closes it after use.
     other system info...}
 ```
 
-#### Build login info with Docker Hub
-```clojure
-(def login-info (docker/register conn "username" "password"))
-```
-
 ### Image Handling
 
 #### Pulling the `busybox:musl` image
@@ -149,7 +150,7 @@ which closes it after use.
 
 #### Pushing an image
 ```clojure
-(docker/push conn "image id or <repo>:<tag>" login-info)
+(docker/push conn "image id or <repo>:<tag>")
 => "myrepo/test:latest"
 ```
 
@@ -162,22 +163,24 @@ which closes it after use.
 #### Listing all available images
 ```clojure
 (docker/image-ls conn)
-=> [{:Created     "1548886792",
-     :Id          "sha256:caf27325b298a6730837023a8a342699c8b7b388b8d878966b064a1320043019",
-     :ParentId    "",
-     :RepoTags    ["alpine:latest"],
-     :RepoDigests ["alpine@sha256:b3dbf31b77fd99d9c08f780ce6f5282aba076d70a513a8be859d8d3a4d0c92b8"],
-     :Size        5529164,
-     :VirtualSize 5529164,
-     :Labels      nil}
-    {:Created     "1546305828",
-     :Id          "sha256:3cc47384c4cb779466fe40182420bd90ba761a5f26f8564580a114bcd0dfa911",
-     :ParentId    "",
-     :RepoTags    ["busybox:musl"],
-     :RepoDigests ["busybox@sha256:366488474d5b8dfa2546ec5d220e86029925d6c2e54c3fdf45efbfdd06da8e4d"],
-     :Size        1403257,
-     :VirtualSize 1403257,
-     :Labels      nil}]
+=> [{:Created 1565313830,
+     :Id "sha256:bb6408c77dbf632fbd65b33c220438ea9534b9a4610eb058c0ccfc39128b0643",
+     :ParentId "",
+     :RepoTags ["postgres:alpine"],
+     :Size 72462541,
+     :VirtualSize 72462541}
+    {:Created 1556816155,
+     :Id "sha256:66637b2d3513e1524f646d6b8648efa78482ae7612c00cab1ff842dc89034afe",
+     :ParentId "",
+     :RepoTags ["bobcd/resource-git:latest"],
+     :Size 976644873,
+     :VirtualSize 976644873}
+    {:Created 1556815030,
+     :Id "sha256:3245ba9120f894f33c324403a7890ac61f91a7cb77fd59fa3174f56d52f05852",
+     :ParentId "",
+     :RepoTags ["bobcd/artifact-local:latest"],
+     :Size 973466966,
+     :VirtualSize 973466966}]
 ```
 
 #### Committing changes from a container to a new image
@@ -206,52 +209,30 @@ which closes it after use.
 #### Listing all available containers
 ```clojure
 (docker/ps conn) ; Only running containers, pass true for all containers
-=> [{:Ports           [{:PrivatePort 6379, :PublicPort 0, :Type "tcp", :IP nil}],
-     :Image           "redis:alpine",
-     :Labels          {},
-     :Id              "86fd4b8375e3dfac018e37efbddb7b39d3d4b28e1671331a97fb913e7d888f68",
-     :SizeRw          nil,
-     :Mounts          [{:Type        "volume",
-                        :Name        "9669e9b669d5c18ebc8314a4217af4a2207f37d94684ab353b9da87275cad4d1",
-                        :Source      "",
-                        :Destination "/data",
-                        :Driver      "local",
-                        :Mode        "",
-                        :RW          true,
-                        :Propagation ""}],
-     :SizeRootFs      nil,
-     :Command         "docker-entrypoint.sh redis-server",
-     :ImageID         "sha256:a5cff96d7b8f5d3332b43922e424d448172f68b118e0e32cb26270227faec083",
-     :Names           ["/goofy_wilson"],
-     :State           "running",
-     :Created         1550060546,
-     :NetworkSettings {:Ports                  {},
-                       :LinkLocalIPv6Address   nil,
-                       :GlobalIPv6PrefixLen    nil,
-                       :SandboxID              nil,
-                       :IPv6Gateway            nil,
-                       :PortMapping            nil,
-                       :Gateway                nil,
-                       :EndpointID             nil,
-                       :MacAddress             nil,
-                       :IPPrefixLen            nil,
-                       :GlobalIPv6Address      nil,
-                       :Networks               {:bridge {:Aliases             nil,
-                                                         :GlobalIPv6PrefixLen 0,
-                                                         :IPv6Gateway         "",
-                                                         :Gateway             "172.17.0.1",
-                                                         :EndpointID          "6bf4bc46e3cc7cef4325a832be258ce492ed4acad6924c28852f3d8ebd104746",
-                                                         :MacAddress          "02:42:ac:11:00:02",
-                                                         :IPPrefixLen         16,
-                                                         :GlobalIPv6Address   "",
-                                                         :IPAddress           "172.17.0.2",
-                                                         :NetworkID           "0c54060f7a84c94770358434c8ecd4a5078af12157825b91bb2dde68966368c7"}},
-                       :Bridge                 nil,
-                       :HairpinMode            nil,
-                       :SandboxKey             nil,
-                       :IPAddress              nil,
-                       :LinkLocalIPv6PrefixLen nil},
-     :Status          "Up 7 seconds"}]
+=> [{:Ports [],
+     :Image "busybox:musl",
+     :Labels {},
+     :Id "fb676a53bc9b3fd7ad32142828cf8fbd7628dda83ec6fd200faba881ab890da2",
+     :Mounts [],
+     :HostConfig {:NetworkMode "default"},
+     :Command "sh",
+     :ImageID "sha256:65a3b9e8dac8c1e33c4af38a8f4a6c0be46b0703c3fb96d6b788ea517c636e9e",
+     :Names ["/con"],
+     :State "running",
+     :Created 1566567943,
+     :NetworkSettings {:Networks {:bridge {:Aliases nil,
+                                           :GlobalIPv6PrefixLen 0,
+                                           :IPv6Gateway "",
+                                           :Gateway "172.17.0.1",
+                                           :EndpointID "f1a89a78d3320a3ef3b57e99a5a5a8c9d2aa5afd1238d8a700b58d3595326c57",
+                                           :MacAddress "02:42:ac:11:00:02",
+                                           :IPPrefixLen 16,
+                                           :GlobalIPv6Address "",
+                                           :Links nil,
+                                           :IPAMConfig nil,
+                                           :IPAddress "172.17.0.2",
+                                           :NetworkID "7221f9584ec74a880b5205471d70240ece3d4469470b04da4e2e191c0b7d835e"}}},
+     :Status "Up 15 seconds"}]
 ```
 
 #### Starting a container
@@ -358,9 +339,9 @@ Returns an InputStream to the tar archive of the path.
 Create a TarArchiveInputStream to process the file(s) in it.
 ```clojure
 (docker/stream-path conn "id or name" "path on container")
-=> #object[org.glassfish.jersey.message.internal.EntityInputStream
-           0x6c3522c0
-           "org.glassfish.jersey.message.internal.EntityInputStream@6c3522c0"]
+=> #object[com.github.dockerjava.jaxrs.util.WrappedResponseInputStream
+           0xff125f9
+           "com.github.dockerjava.jaxrs.util.WrappedResponseInputStream@40e34255"]
 ```
 
 #### Inspecting a container
@@ -403,9 +384,81 @@ Create a TarArchiveInputStream to process the file(s) in it.
 #### Getting container stats
 ```clojure
 (stats conn "id or name")
-=> {:CpuPct 0.0
-    :MemMib 23.40234375
-    :MemPct 0.5928601469533163}
+=> {:read "2019-08-23T13:57:05.1122079Z",
+    :networks {:eth0 {:rx_bytes 1178,
+                      :rx_dropped 0,
+                      :rx_errors 0,
+                      :rx_packets 15,
+                      :tx_bytes 0,
+                      :tx_dropped 0,
+                      :tx_errors 0,
+                      :tx_packets 0}},
+    :memory_stats {:stats {:active_anon 5484544,
+                           :dirty 0,
+                           :pgmajfault 0,
+                           :mapped_file 10948608,
+                           :total_writeback 0,
+                           :rss_huge 0,
+                           :total_cache 61628416,
+                           :unevictable 0,
+                           :inactive_file 41263104,
+                           :rss 2752512,
+                           :total_dirty 0,
+                           :total_active_file 8929280,
+                           :inactive_anon 8704000,
+                           :total_pgpgout 29016,
+                           :total_inactive_file 41263104,
+                           :pgpgin 44734,
+                           :total_rss 2752512,
+                           :active_file 8929280,
+                           :cache 61628416,
+                           :hierarchical_memory_limit 9223372036854771712,
+                           :hierarchical_memsw_limit 9223372036854771712,
+                           :total_pgpgin 44734,
+                           :total_unevictable 0,
+                           :swap nil,
+                           :pgpgout 29016,
+                           :pgfault 38458,
+                           :total_active_anon 5484544,
+                           :total_swap nil,
+                           :total_mapped_file 10948608,
+                           :total_pgmajfault 0,
+                           :total_rss_huge 0,
+                           :writeback 0,
+                           :total_inactive_anon 8704000,
+                           :total_pgfault 38458},
+                   :usage 69570560,
+                   :max_usage 75354112,
+                   :failcnt nil,
+                   :limit 4139208704},
+    :blkio_stats {:io_service_bytes_recursive [{:major 8, :minor 0, :op "Read", :value 0}
+                                               {:major 8, :minor 0, :op "Write", :value 122953728}
+                                               {:major 8, :minor 0, :op "Sync", :value 212992}
+                                               {:major 8, :minor 0, :op "Async", :value 122740736}
+                                               {:major 8, :minor 0, :op "Total", :value 122953728}],
+                  :io_serviced_recursive [{:major 8, :minor 0, :op "Read", :value 0}
+                                          {:major 8, :minor 0, :op "Write", :value 2527}
+                                          {:major 8, :minor 0, :op "Sync", :value 1299}
+                                          {:major 8, :minor 0, :op "Async", :value 1228}
+                                          {:major 8, :minor 0, :op "Total", :value 2527}],
+                  :io_queue_recursive [],
+                  :io_service_time_recursive [],
+                  :io_wait_time_recursive [],
+                  :io_merged_recursive [],
+                  :io_time_recursive [],
+                  :sectors_recursive []},
+    :cpu_stats {:cpu_usage {:total_usage 1778621831,
+                            :percpu_usage [101966366 490612163 358957860 827085442],
+                            :usage_in_kernelmode 950000000,
+                            :usage_in_usermode 840000000},
+                :system_cpu_usage 76068760000000,
+                :online_cpus 4,
+                :throttling_data {:periods 0, :throttled_periods 0, :throttled_time 0}},
+    :precpu_stats {:cpu_usage {:total_usage 0, :percpu_usage nil, :usage_in_kernelmode 0, :usage_in_usermode 0},
+                   :system_cpu_usage nil,
+                   :online_cpus nil,
+                   :throttling_data {:periods 0, :throttled_periods 0, :throttled_time 0}},
+    :pids_stats {:current 7}}}
 ```
 
 ### Network Handling

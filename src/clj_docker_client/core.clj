@@ -14,21 +14,22 @@
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
 (ns clj-docker-client.core
-  (:require [byte-streams :as bs]
-            [clj-docker-client.utils :as u])
-  (:import (java.nio.file Paths)
-           (java.io File)
-           (com.spotify.docker.client DefaultDockerClient
-                                      DockerClient
-                                      DockerClient$ListImagesParam
-                                      DockerClient$BuildParam
-                                      DockerClient$ListContainersParam
-                                      DockerClient$LogsParam
-                                      LogMessage
-                                      DockerClient$ListNetworksParam)
-           (com.spotify.docker.client.messages ContainerCreation
-                                               RegistryAuth
-                                               NetworkConfig)))
+  (:require [clj-docker-client.utils :as u])
+  (:import (java.io File)
+           (java.util.concurrent TimeUnit)
+           (com.github.dockerjava.core DefaultDockerClientConfig
+                                       DockerClientBuilder)
+           (com.github.dockerjava.api DockerClient)
+           (com.github.dockerjava.jaxrs JerseyDockerCmdExecFactory)
+           (com.github.dockerjava.core.command PullImageResultCallback
+                                               BuildImageResultCallback
+                                               PushImageResultCallback
+                                               LogContainerResultCallback
+                                               WaitContainerResultCallback)
+           (com.github.dockerjava.api.model Frame
+                                            Statistics)
+           (com.github.dockerjava.core.async ResultCallbackTemplate)
+           (com.github.dockerjava.api.command CreateContainerCmd)))
 
 ;; TODO: Add more connection options
 (defn connect
@@ -38,11 +39,19 @@
 
   Supply the URI as a string with protocol for a remote connection."
   ([]
-   (.build (DefaultDockerClient/fromEnv)))
+   (connect nil))
   ([^String uri]
-   (-> (DefaultDockerClient/builder)
-       (.uri uri)
-       (.build))))
+   (let [config       (DefaultDockerClientConfig/createDefaultConfigBuilder)
+         config       (if (nil? uri)
+                        config
+                        (.withDockerHost config uri))
+         exec-factory (-> (JerseyDockerCmdExecFactory.)
+                          (.withConnectTimeout (int 1000))
+                          (.withMaxTotalConnections (int 100))
+                          (.withMaxPerRouteConnections (int 10)))]
+     (-> (DockerClientBuilder/getInstance config)
+         (.withDockerCmdExecFactory exec-factory)
+         (.build)))))
 
 (defn disconnect
   "Closes the connection to the Docker server."
@@ -54,20 +63,13 @@
 
   Returns OK if everything is fine."
   [^DockerClient connection]
-  (.ping connection))
-
-(defn register
-  "Builds login info for a Docker registry."
-  [^String username ^String password]
-  (-> (RegistryAuth/builder)
-      (.username username)
-      (.password password)
-      (.build)))
+  (when (nil? (.exec (.pingCmd connection)))
+    "OK"))
 
 (defn info
   "Fetches system wide info about the connected Docker server."
   [^DockerClient connection]
-  (u/spotify-obj->Map (.info connection)))
+  (u/->Map (.exec (.infoCmd connection))))
 
 ;; Images
 
@@ -76,11 +78,15 @@
 
   The *name* is represented by <repo>:<tag>."
   [^DockerClient connection ^String name]
-  (do (.pull connection name)
-      name))
+  (-> (.pullImageCmd connection name)
+      (.exec (PullImageResultCallback.))
+      (.awaitCompletion))
+  name)
 
 (defn build
   "Builds an image from a provided directory, repo and optional tag.
+
+  *WORKS ONLY IF DAEMON IS RUNNING LOCALLY.*
 
   Returns the id of the built image.
 
@@ -88,12 +94,10 @@
   ([^DockerClient connection ^String path ^String repo]
    (build connection path repo "latest"))
   ([^DockerClient connection ^String path ^String repo ^String tag]
-   (let [build-path (Paths/get path (into-array String []))]
-     (.build
-       connection
-       build-path
-       (format "%s:%s" repo tag)
-       (into-array DockerClient$BuildParam [])))))
+   (-> (.buildImageCmd connection (File. path))
+       (.withTags #{(format "%s:%s" repo tag)})
+       (.exec (BuildImageResultCallback.))
+       (.awaitImageId))))
 
 (defn push
   "Pushes an image by *name*.
@@ -101,9 +105,11 @@
   Returns the name of the pushed image.
 
   The *name* is represented by <repo>:<tag>."
-  [^DockerClient connection ^String name ^RegistryAuth auth]
-  (do (.push connection name auth)
-      name))
+  [^DockerClient connection ^String name]
+  (-> (.pushImageCmd connection name)
+      (.exec (PushImageResultCallback.))
+      (.awaitCompletion))
+  name)
 
 (defn image-rm
   "Deletes an image by *name* or id.
@@ -117,17 +123,18 @@
   ([^DockerClient connection ^String name]
    (image-rm connection name false false))
   ([^DockerClient connection ^String name force? no-prune?]
-   (do (.removeImage connection name force? no-prune?)
-       name)))
+   (-> (.removeImageCmd connection name)
+       (.withForce force?)
+       (.withNoPrune no-prune?)
+       (.exec))
+   name))
 
 (defn image-ls
   "Lists all available images."
   [^DockerClient connection]
-  (->> (.listImages
-         connection
-         (into-array DockerClient$ListImagesParam
-                     [(DockerClient$ListImagesParam/allImages)]))
-       (mapv u/spotify-obj->Map)))
+  (->> (.listImagesCmd connection)
+       (.exec)
+       (mapv u/->Map)))
 
 (defn commit-container
   "Creates an image from the changes of a container by name or id.
@@ -135,18 +142,11 @@
   Takes the repo, tag of the image and the new entry point command.
   Returns the id of the new image."
   [^DockerClient connection ^String id ^String repo ^String tag ^String command]
-  (-> connection
-      (.commitContainer id
-                        repo
-                        tag
-                        (u/config-of (-> connection
-                                         (.inspectContainer id)
-                                         (.config)
-                                         (.image))
-                                     (u/sh-tokenize! command))
-                        nil
-                        nil)
-      (.id)
+  (-> (.commitCmd connection id)
+      (.withRepository repo)
+      (.withTag tag)
+      (.withCmd (into-array String (u/sh-tokenize! command)))
+      (.exec)
       (u/format-id)))
 
 ;; Containers
@@ -174,14 +174,21 @@
   ([connection image cmd env-vars exposed-ports working-dir]
    (create connection image cmd env-vars exposed-ports working-dir nil))
   ([^DockerClient connection image cmd env-vars exposed-ports working-dir user]
-   (let [config   (u/config-of image
-                               (u/sh-tokenize! cmd)
-                               (u/format-env-vars env-vars)
-                               exposed-ports
-                               working-dir
-                               user)
-         creation ^ContainerCreation (.createContainer connection config)]
-     (u/format-id (.id creation)))))
+   (let [creation ^CreateContainerCmd (-> (.createContainerCmd connection image)
+                                          (.withCmd (into-array String (u/sh-tokenize! cmd)))
+                                          (.withEnv (u/format-env-vars env-vars))
+                                          (.withHostConfig (u/port-configs-from exposed-ports)))
+         creation (if (some? working-dir)
+                    (.withWorkingDir creation working-dir)
+                    creation)
+         creation (if (some? user)
+                    (.withUser creation user)
+                    creation)]
+     (-> creation
+         (.exec)
+         (u/->Map)
+         (:Id)
+         (u/format-id)))))
 
 (defn ps
   "Lists all containers.
@@ -189,29 +196,31 @@
   Lists all running containers by default, all can be listed by passing a true param to *all?*"
   ([^DockerClient connection] (ps connection false))
   ([^DockerClient connection all?]
-   (->> (.listContainers
-          connection
-          (into-array DockerClient$ListContainersParam
-                      [(DockerClient$ListContainersParam/allContainers all?)]))
-        (mapv u/spotify-obj->Map))))
+   (->> (.withShowAll (.listContainersCmd connection) all?)
+        (.exec)
+        (mapv u/->Map))))
 
 (defn start
   "Starts a created container asynchronously by name or id.
 
   Returns the name or id."
   [^DockerClient connection name]
-  (do (.startContainer connection name)
-      name))
+  (-> (.startContainerCmd connection name)
+      (.exec))
+  name)
 
 (defn stop
   "Stops a container with SIGTERM by name or id.
 
   Waits for timeout secs or value of timeout before killing.
   Returns the name or id."
-  ([^DockerClient connection name] (stop connection name 30))
+  ([^DockerClient connection name]
+   (stop connection name 30))
   ([^DockerClient connection name timeout]
-   (do (.stopContainer connection name timeout)
-       name)))
+   (-> (.stopContainerCmd connection name)
+       (.withTimeout (int timeout))
+       (.exec))
+   name))
 
 (defn kill
   "Kills container with SIGKILL by name or id.
@@ -219,61 +228,70 @@
   Assumes the container to be running.
   Returns the name or id."
   [^DockerClient connection name]
-  (do (.killContainer connection name)
-      name))
+  (-> (.killContainerCmd connection name)
+      (.exec))
+  name)
 
 (defn restart
   "Restarts a container with by name or id.
 
   Waits for timeout secs or value of timeout before killing.
   Returns the name or id."
-  ([^DockerClient connection name] (restart connection name 30))
+  ([^DockerClient connection name]
+   (restart connection name 30))
   ([^DockerClient connection name timeout]
-   (do (.restartContainer connection name timeout)
-       name)))
+   (-> (.restartContainerCmd connection name)
+       (.withtTimeout timeout)
+       (.exec))
+   name))
 
 (defn pause
   "Pauses a container by name or id.
 
   Returns the name or id."
   [^DockerClient connection name]
-  (do (.pauseContainer connection name)
-      name))
+  (-> (.pauseContainerCmd connection name)
+      (.exec))
+  name)
 
 (defn un-pause
   "Un-pauses a container by name or id.
 
   Returns the name or id."
   [^DockerClient connection name]
-  (do (.unpauseContainer connection name)
-      name))
+  (-> (.unpauseContainerCmd connection name)
+      (.exec))
+  name)
 
 (defn logs
   "Returns a lazy seq of logs split by lines from a container by name or id."
   [^DockerClient connection name]
-  (->> (.logs connection
-              name
-              (into-array DockerClient$LogsParam
-                          [(DockerClient$LogsParam/stdout)
-                           (DockerClient$LogsParam/stderr)]))
-       (iterator-seq)
-       (map #(.content ^LogMessage %))
-       (bs/to-input-stream)
-       (clojure.java.io/reader)
-       (line-seq)))
+  (let [log-acc  (atom [])
+        callback (proxy [LogContainerResultCallback] []
+                   (onNext [^Frame frame]
+                     (swap! log-acc conj (String. (.getPayload frame)))))]
+    (-> (.logContainerCmd connection name)
+        (.withStdOut true)
+        (.withStdErr true)
+        (.exec callback)
+        (.awaitCompletion 1 (TimeUnit/SECONDS)))
+    (->> @log-acc
+         (map clojure.string/trim))))
 
 (defn container-state
   "Returns the current state of a created container by name or id."
   [^DockerClient connection name]
-  (-> connection
-      (.inspectContainer name)
-      (.state)
-      (u/spotify-obj->Map)))
+  (-> (.inspectContainerCmd connection name)
+      (.exec)
+      (u/->Map)
+      (:State)))
 
 (defn wait-container
   "Waits for the exit of a container by id or name."
   [^DockerClient connection name]
-  (.statusCode (.waitContainer connection name)))
+  (-> (.waitContainerCmd connection name)
+      (.exec (WaitContainerResultCallback.))
+      (.awaitStatusCode)))
 
 (defn run
   "Runs a container with a specified image, command, env vars and host->container port mappings.
@@ -299,20 +317,21 @@
   Returns the name or id."
   ([^DockerClient connection name] (rm connection name false))
   ([^DockerClient connection name force?]
-   (do (when force?
-         (kill connection name))
-       (.removeContainer connection name)
-       name)))
+   (when force?
+     (kill connection name))
+   (-> (.removeContainerCmd connection name)
+       (.exec))
+   name))
 
 (defn cp
-  "Copies the contents of the host-path to the container by id/name
+  "Copies the host-path recursively to the container by id/name
   to the container-path inside the container"
   [^DockerClient connection ^String id ^String host-path ^String container-path]
-  (do (.copyToContainer connection
-                        (.toPath (File. host-path))
-                        id
-                        container-path)
-      id))
+  (-> (.copyArchiveToContainerCmd connection id)
+      (.withHostResource host-path)
+      (.withRemotePath container-path)
+      (.exec))
+  id)
 
 (defn stream-path
   "Returns a input stream of a given path in a container by name.
@@ -322,19 +341,29 @@
   Create a TarArchiveInputStream from this to process the archived
   files."
   [^DockerClient connection ^String id ^String path]
-  (.archiveContainer connection id path))
+  (-> (.copyArchiveFromContainerCmd connection id path)
+      (.exec)))
 
 (defn inspect
   "Inspects a container by name or id."
   [^DockerClient connection ^String container]
-  (u/spotify-obj->Map (.inspectContainer connection container)))
+  (-> (.inspectContainerCmd connection container)
+      (.exec)
+      (u/->Map)))
 
 (defn stats
   "Returns the resource stats of a created container by name or id/name."
-  [^DockerClient connection name]
-  (-> connection
-      (.stats name)
-      (u/ContainerStats->Map name)))
+  ([^DockerClient connection name]
+   (stats connection name 1))
+  ([^DockerClient connection name sample-duration]
+   (let [stats-acc (atom {})
+         callback  (proxy [ResultCallbackTemplate] []
+                     (onNext [^Statistics stats]
+                       (swap! stats-acc merge (u/->Map stats))))]
+     (-> (.statsCmd connection name)
+         (.exec callback)
+         (.awaitCompletion sample-duration (TimeUnit/SECONDS)))
+     @stats-acc)))
 
 ;; Networks
 
@@ -345,39 +374,45 @@
   ([^DockerClient connection name check-duplicate?]
    (network-create connection name check-duplicate? true))
   ([^DockerClient connection name check-duplicate? attachable?]
-   (let [config (-> (NetworkConfig/builder)
-                    (.checkDuplicate check-duplicate?)
-                    (.attachable attachable?)
-                    (.name name)
-                    (.build))]
-     (do (.createNetwork connection config)
-         name))))
+   (-> (.createNetworkCmd connection)
+       (.withName name)
+       (.withCheckDuplicate check-duplicate?)
+       (.withAttachable attachable?)
+       (.exec))
+   name))
 
 (defn network-rm
   "Removes a network by name."
   [^DockerClient connection name]
-  (do (.removeNetwork connection name)
-      name))
+  (-> (.removeNetworkCmd connection name)
+      (.exec))
+  name)
 
 (defn network-ls
   "Lists all networks."
   [^DockerClient connection]
-  (->> (.listNetworks connection
-                      (into-array DockerClient$ListNetworksParam []))
-       (map u/spotify-obj->Map)))
+  (->> (.listNetworksCmd connection)
+       (.exec)
+       (map u/->Map)))
 
 (defn network-connect
   "Connects a container to a network.
 
   Takes the name/id of the container and the name of the network."
   [^DockerClient connection ^String network ^String container]
-  (do (.connectToNetwork connection container network)
-      container))
+  (-> (.connectToNetworkCmd connection)
+      (.withContainerId container)
+      (.withNetworkId network)
+      (.exec))
+  container)
 
 (defn network-disconnect
   "Disconnects a container to a network.
 
   Takes the name/id of the container and the name of the network."
   [^DockerClient connection ^String network ^String container]
-  (do (.disconnectFromNetwork connection container network)
-      container))
+  (-> (.disconnectFromNetworkCmd connection)
+      (.withContainerId container)
+      (.withNetworkId network)
+      (.exec))
+  container)

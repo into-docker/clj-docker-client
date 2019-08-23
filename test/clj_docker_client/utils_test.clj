@@ -44,8 +44,9 @@
                              :var2 "val2"})
            ["var1=val1" "var2=val2"]))))
 
-(deftest spotify-obj-test
-  (testing "converting a spotify docker object to a Map"
-    (let [conn (docker/connect)]
-      (is (= (spotify-obj->Map conn)
-             {:host "localhost"})))))
+(deftest obj->Map-test
+  (testing "converting a docker response to a Map"
+    (let [conn (docker/connect)
+          info (docker/info conn)
+          _    (docker/disconnect conn)]
+      (is (map? (->Map info))))))

@@ -21,9 +21,10 @@
             :url  "https://www.gnu.org/licenses/lgpl-3.0.en.html"}
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [byte-streams "0.2.4"]
-                 [com.spotify/docker-client "8.16.0"]
+                 [com.github.docker-java/docker-java "3.1.5"]
                  [ch.qos.logback/logback-classic "1.2.3"]
-                 [cheshire "5.9.0"]]
+                 [cheshire "5.9.0"]
+                 [javax.activation/activation "1.1.1"]]
   :plugins [[lein-ancient "0.6.15"]]
   :global-vars {*warn-on-reflection* true}
   :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]}})

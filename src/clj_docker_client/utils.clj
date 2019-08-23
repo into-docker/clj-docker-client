@@ -15,19 +15,10 @@
 
 (ns clj-docker-client.utils
   (:require [cheshire.core :as json])
-  (:import (com.spotify.docker.client.messages HostConfig
-                                               ContainerConfig
-                                               PortBinding
-                                               ContainerStats
-                                               MemoryStats
-                                               CpuStats)
-           (java.util List
-                      Set)
-           (com.fasterxml.jackson.databind ObjectMapper)))
+  (:import (com.fasterxml.jackson.databind ObjectMapper)
+           (com.github.dockerjava.api.model HostConfig PortBinding Ports$Binding ExposedPort)))
 
 (def id-length 12)
-(def bytes-in-mb (* 1024. 1024.))
-(def old-cpu-map (atom {}))
 
 (defn format-id
   "Return docker SHA256 ids in the standard length"
@@ -89,102 +80,26 @@
         (conj args current-arg)
         args))))
 
-(defn port-binding-default-public
-  [bind]
-  (if (clojure.string/includes? bind ":")
-    (let [[host port] (clojure.string/split bind #":")]
-      (PortBinding/of ^String host ^String port))
-    (PortBinding/of "0.0.0.0" ^String bind)))
-
-(defn filter-host
-  [s]
-  (if (clojure.string/includes? s ":")
-    (second (clojure.string/split s #":"))
-    s))
-
 (defn port-configs-from
   [port-mapping]
   (let [host-ports      (->> port-mapping
                              (keys)
-                             (map str)
-                             (map #(vector % [(port-binding-default-public %)]))
-                             (reduce (fn [acc [k v]]
-                                       (assoc acc (filter-host k) v)) {}))
+                             (map str))
         container-ports (->> port-mapping
                              (vals)
-                             (map str)
-                             (into #{}))]
-    {:host-config   (if (empty? host-ports)
-                      (.build (HostConfig/builder))
-                      (-> (HostConfig/builder)
-                          (.portBindings host-ports)
-                          (.build)))
-     :exposed-ports container-ports}))
-
-(defn config-of
-  ([^String image]
-   (config-of image [] [] {} nil nil))
-  ([^String image ^List cmd]
-   (config-of image cmd [] {} nil nil))
-  ([^String image ^List cmd ^List env-vars]
-   (config-of image cmd env-vars {} nil nil))
-  ([^String image ^List cmd ^List env-vars port-bindings ^String working-dir ^String user]
-   (let [port-config (port-configs-from port-bindings)]
-     (-> (ContainerConfig/builder)
-         (.hostConfig (:host-config port-config))
-         (.env env-vars)
-         (.image image)
-         (.exposedPorts ^Set (:exposed-ports port-config))
-         (.cmd cmd)
-         (.workingDir working-dir)
-         (.user user)
-         (.build)))))
+                             (map str))
+        port-bindings   (for [host-port      host-ports
+                              container-port container-ports]
+                          (PortBinding. (Ports$Binding/parse host-port)
+                                        (ExposedPort/parse container-port)))]
+    (.withPortBindings (HostConfig.)
+                       (into-array PortBinding port-bindings))))
 
 (defn format-env-vars
   [env-vars]
   (map #(format "%s=%s" (name (first %)) (last %))
        env-vars))
 
-(defn spotify-obj->Map
+(defn ->Map
   [obj]
-  (let [mapper (ObjectMapper.)]
-    (json/parse-string (.writeValueAsString mapper obj) true)))
-
-(defn cpu-percentage
-  "Will deliver the percentage cpu time used compared to cpu available.
-  Takes the difference with the previous call, might sometimes give 0 when called repeatedly.
-  Will always return nil on the first call."
-  [old-map new-map name]
-  (let [^CpuStats old-cpu (get old-map name)
-        ^CpuStats new-cpu (get new-map name)]
-    (if (or (nil? old-cpu) (nil? new-cpu) (nil? (.systemCpuUsage new-cpu)) (nil? (.systemCpuUsage old-cpu)))
-      nil
-      (let [used-cpu    (- (.totalUsage (.cpuUsage new-cpu)) (.totalUsage (.cpuUsage old-cpu)))
-            system-used (- (.systemCpuUsage new-cpu) (.systemCpuUsage old-cpu))]
-        (double (* 100 (/ used-cpu system-used)))))))
-
-(defn taken-mem-bytes
-  "Returns the memory taken by the container, excluding the cache as that could be freed when needed"
-  [^MemoryStats mem-stats]
-  (- (.usage mem-stats) (.totalCache (.stats mem-stats))))
-
-(defn mem-mib
-  "Returns the memory taken by the container in MiB"
-  [^MemoryStats mem-stats]
-  (double (/ (taken-mem-bytes mem-stats) bytes-in-mb)))
-
-(defn mem-pct
-  "Returns the memory taken as percentage of the total available memory"
-  [^MemoryStats mem-stats]
-  (double (* 100 (/ (taken-mem-bytes mem-stats) (.limit mem-stats)))))
-
-(defn ContainerStats->Map
-  "Will turn the stats into just cpu and memory stats, in a similar output 'docker stats' gives"
-  [^ContainerStats stats name]
-  (let [mem-stats (.memoryStats stats)
-        [old-map new-map] (swap-vals! old-cpu-map assoc name (.cpuStats stats))]
-    (if (nil? (.usage mem-stats))
-      nil
-      {:CpuPct (cpu-percentage old-map new-map name)
-       :MemMib (mem-mib mem-stats)
-       :MemPct (mem-pct mem-stats)})))
+  (json/parse-string (.writeValueAsString (ObjectMapper.) obj) true))
