@@ -116,13 +116,25 @@
             output (logs conn id)]
         (is (= ["1" "2" "3" "4" "5"] output))
         (rm conn id)))
-    (testing "Creation with working dir and user"
-      (let [id     (create conn img "sh -c 'pwd && whoami'" {} {} "/tmp" "root")
+    (testing "Live logging from a container"
+      (let [id (create conn img "sh -c 'for i in `seq 1 5`; do echo $i; done'" {} {})
+            _  (start conn id)
+            _  (logs-live conn id #(is (contains? #{"1" "2" "3" "4" "5"} %)))]
+        (rm conn id)))
+    (testing "Stats from a container"
+      (let [id     (create conn img "sh -c 'for i in `seq 1 5`; do echo $i; done'" {} {})
             _      (start conn id)
             _      (wait-container conn id)
-            output (logs conn id)]
-        (is (= ["/tmp" "root"] output)
-            (rm conn id))))
+            output (stats conn id)]
+        (is (map? output))
+        (rm conn id)))
+    (testing "Creation with working dir and user"
+     (let [id     (create conn img "sh -c 'pwd && whoami'" {} {} "/tmp" "root")
+           _      (start conn id)
+           _      (wait-container conn id)
+           output (logs conn id)]
+       (is (= ["/tmp" "root"] output)
+           (rm conn id))))
     (testing "Fetching container state"
       (let [id    (create conn img "echo hello" {} {})
             _     (start conn id)
@@ -155,20 +167,25 @@
         (is (not (nil? ip)))
         (is (correct-ip? ip))))
     (testing "Port binding with different IP"
-     (let [image "redis:alpine"
-           _     (pull conn image)
-           id    (create conn image "redis-server" {} {"127.0.0.1:6379" "6379"})
-           id    (start conn id)
-           info  (first (filter #(= id (u/format-id (:Id %))) (ps conn true)))]
-       (is (correct-id? id))
-       (is (= "running" (:State info)))
-       (is (= [{:PublicPort  6379
-                :PrivatePort 6379
-                :Type        "tcp"
-                :IP          "127.0.0.1"}] (:Ports info)))
-       (kill conn id)
-       (rm conn id)
-       (image-rm conn image)))
+      (let [image "redis:alpine"
+            _     (pull conn image)
+            id    (create conn image "redis-server" {} {"127.0.0.1:6379" "6379"
+                                                        "6378"           "6379"})
+            id    (start conn id)
+            info  (first (filter #(= id (u/format-id (:Id %))) (ps conn true)))]
+        (is (correct-id? id))
+        (is (= "running" (:State info)))
+        (is (= [{:IP          "0.0.0.0"
+                 :PrivatePort 6379
+                 :PublicPort  6378
+                 :Type        "tcp"}
+                {:IP          "127.0.0.1"
+                 :PrivatePort 6379
+                 :PublicPort  6379
+                 :Type        "tcp"}] (:Ports info)))
+        (kill conn id)
+        (rm conn id)
+        (image-rm conn image)))
     (testing "Removing a container"
       (let [id (create conn img "echo hello" {:k "v"} {})
             _  (rm conn id)]

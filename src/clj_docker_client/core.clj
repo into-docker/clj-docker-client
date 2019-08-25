@@ -16,6 +16,7 @@
 (ns clj-docker-client.core
   (:require [clj-docker-client.utils :as u])
   (:import (java.io File)
+           (java.util List)
            (java.util.concurrent TimeUnit)
            (com.github.dockerjava.core DefaultDockerClientConfig
                                        DockerClientBuilder)
@@ -175,8 +176,9 @@
    (create connection image cmd env-vars exposed-ports working-dir nil))
   ([^DockerClient connection image cmd env-vars exposed-ports working-dir user]
    (let [creation ^CreateContainerCmd (-> (.createContainerCmd connection image)
-                                          (.withCmd (into-array String (u/sh-tokenize! cmd)))
-                                          (.withEnv (u/format-env-vars env-vars))
+                                          (.withCmd ^"[Ljava.lang.String;"
+                                                    (into-array String (u/sh-tokenize! cmd)))
+                                          (.withEnv ^List (u/format-env-vars env-vars))
                                           (.withHostConfig (u/port-configs-from exposed-ports)))
          creation (if (some? working-dir)
                     (.withWorkingDir creation working-dir)
@@ -285,7 +287,10 @@
   [^DockerClient connection name callback]
   (let [log-callback (proxy [LogContainerResultCallback] []
                        (onNext [^Frame frame]
-                         (callback (String. (.getPayload frame)))))]
+                         (callback (-> frame
+                                       (.getPayload)
+                                       (String.)
+                                       (clojure.string/trim)))))]
     (-> (.logContainerCmd connection name)
         (.withStdOut true)
         (.withStdErr true)
@@ -369,7 +374,7 @@
 (defn stats
   "Returns the resource stats of a created container by name or id/name.
 
-  Samples for 1 second by default. Pass sample-duration to change"
+  Samples for 1 second by default. Pass `sample-duration` to change"
   ([^DockerClient connection name]
    (stats connection name 1))
   ([^DockerClient connection name sample-duration]
@@ -381,18 +386,6 @@
          (.exec callback)
          (.awaitCompletion sample-duration (TimeUnit/SECONDS)))
      @stats-acc)))
-
-(defn stats-live
-  "Live version of stats, takes a callback to be notified of Stats as the appear.
-
-  Attaches to the container and blocks until the attached container is finished."
-  [^DockerClient connection name callback]
-  (let [stats-callback (proxy [ResultCallbackTemplate] []
-                         (onNext [^Statistics stats]
-                           (callback (u/->Map stats))))]
-    (-> (.statsCmd connection name)
-        (.exec stats-callback))
-    (.awaitCompletion stats-callback)))
 
 ;; Networks
 

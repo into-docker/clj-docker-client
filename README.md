@@ -473,18 +473,6 @@ Create a TarArchiveInputStream to process the file(s) in it.
     :pids_stats {:current 7}}}
 ```
 
-#### Live stats from a container
-
-Takes a callback which is notified of Statistics/second.
-
-**THIS BLOCKS UNTIL THE CONTAINER IS FINISHED**
-```clojure
-(docker/stats-live conn "name or id" #(println %))
-=> {:stats ...}
-   {:stats ...}
-   ...
-```
-
 ### Network Handling
 
 #### Creating a new network
