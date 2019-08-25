@@ -82,18 +82,12 @@
 
 (defn port-configs-from
   [port-mapping]
-  (let [host-ports      (->> port-mapping
-                             (keys)
-                             (map str))
-        container-ports (->> port-mapping
-                             (vals)
-                             (map str))
-        port-bindings   (for [host-port      host-ports
-                              container-port container-ports]
-                          (PortBinding. (Ports$Binding/parse host-port)
-                                        (ExposedPort/parse container-port)))]
+  (let [port-bindings (for [[host-port container-port] port-mapping
+                            :let [binding-port (-> host-port str Ports$Binding/parse)
+                                  exposed-port (-> container-port str ExposedPort/parse)]]
+                        (PortBinding. binding-port exposed-port))]
     (.withPortBindings (HostConfig.)
-                       (into-array PortBinding port-bindings))))
+                       ^"[Lcom.github.dockerjava.api.model.PortBinding;" (into-array PortBinding port-bindings))))
 
 (defn format-env-vars
   [env-vars]
