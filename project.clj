@@ -20,7 +20,6 @@
   :license {:name "LGPL 3.0"
             :url  "https://www.gnu.org/licenses/lgpl-3.0.en.html"}
   :dependencies [[org.clojure/clojure "1.10.1"]
-                 [byte-streams "0.2.4"]
                  [com.github.docker-java/docker-java "3.1.5"]
                  [ch.qos.logback/logback-classic "1.2.3"]
                  [cheshire "5.9.0"]
