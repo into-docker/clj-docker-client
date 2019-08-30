@@ -164,6 +164,12 @@
   - user, optional
 
   Returns the id of the created container."
+  ([{:keys [connection image command env exposed-ports working-dir user]
+     :as props}]
+   (let [cmd (if command command "")
+         env-vars (if env env {})
+         exp-ports (if exposed-ports exposed-ports {})]
+     (create connection image cmd env-vars exp-ports working-dir user props)))
   ([connection image]
    (create connection image "" {} {} nil nil))
   ([connection image cmd]
@@ -174,8 +180,11 @@
    (create connection image cmd env-vars exposed-ports nil nil))
   ([connection image cmd env-vars exposed-ports working-dir]
    (create connection image cmd env-vars exposed-ports working-dir nil))
-  ([^DockerClient connection image cmd env-vars exposed-ports working-dir user]
+  ([^DockerClient connection image cmd env-vars exposed-ports working-dir user
+    & [{:keys [network-mode] :as props}]]
+   (println "network-mode" network-mode)
    (let [creation ^CreateContainerCmd (-> (.createContainerCmd connection image)
+                                          
                                           (.withCmd ^"[Ljava.lang.String;"
                                                     (into-array String (u/sh-tokenize! cmd)))
                                           (.withEnv ^List (u/format-env-vars env-vars))
@@ -185,7 +194,9 @@
                     creation)
          creation (if (some? user)
                     (.withUser creation user)
-                    creation)]
+                    creation)
+         creation (if network-mode (.withNetworkMode creation network-mode)
+                      creation)]
      (-> creation
          (.exec)
          (u/->Map)
