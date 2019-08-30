@@ -184,7 +184,6 @@
    (create connection image cmd env-vars exposed-ports working-dir nil))
   ([^DockerClient connection image cmd env-vars exposed-ports working-dir user
     & [{:keys [network-mode] :as props}]]
-   (println "network-mode" network-mode)
    (let [creation ^CreateContainerCmd (-> (.createContainerCmd connection image)
                                           
                                           (.withCmd ^"[Ljava.lang.String;"
