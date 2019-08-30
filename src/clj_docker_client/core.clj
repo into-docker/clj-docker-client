@@ -170,8 +170,10 @@
          env-vars (if env env {})
          exp-ports (if exposed-ports exposed-ports {})]
      (create connection image cmd env-vars exp-ports working-dir user props)))
-  ([connection image]
-   (create connection image "" {} {} nil nil))
+  ([connection image-or-props]
+   (if (map? image-or-props)
+     (create (assoc image-or-props :connection connection))
+     (create connection image-or-props "" {} {} nil nil)))
   ([connection image cmd]
    (create connection image cmd {} {} nil nil))
   ([connection image cmd env-vars]
