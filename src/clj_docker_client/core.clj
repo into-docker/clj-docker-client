@@ -155,7 +155,7 @@
 (defn create
   "Creates a container.
 
-  Takes the following as params:
+  Takes the following as params or as a map:
   - image
   - entry point command
   - env vars, optional
@@ -165,9 +165,9 @@
 
   Returns the id of the created container."
   ([{:keys [connection image command env exposed-ports working-dir user]
-     :as props}]
-   (let [cmd (if command command "")
-         env-vars (if env env {})
+     :as   props}]
+   (let [cmd       (if command command "")
+         env-vars  (if env env {})
          exp-ports (if exposed-ports exposed-ports {})]
      (create connection image cmd env-vars exp-ports working-dir user props)))
   ([connection image-or-props]
@@ -185,7 +185,6 @@
   ([^DockerClient connection image cmd env-vars exposed-ports working-dir user
     & [{:keys [network-mode] :as props}]]
    (let [creation ^CreateContainerCmd (-> (.createContainerCmd connection image)
-                                          
                                           (.withCmd ^"[Ljava.lang.String;"
                                                     (into-array String (u/sh-tokenize! cmd)))
                                           (.withEnv ^List (u/format-env-vars env-vars))
@@ -196,8 +195,9 @@
          creation (if (some? user)
                     (.withUser creation user)
                     creation)
-         creation (if network-mode (.withNetworkMode creation network-mode)
-                      creation)]
+         creation (if network-mode
+                    (.withNetworkMode creation network-mode)
+                    creation)]
      (-> creation
          (.exec)
          (u/->Map)

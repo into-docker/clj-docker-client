@@ -205,17 +205,24 @@ which closes it after use.
 (docker/create conn "busybox:musl" "echo hello" {:env "testing"} {8000 8000} "/working/dir" "user")
 => "9a9ce5dc847c"
 
-(docker/create conn {:image "busybox:musl" 
-	:command "echo hello" :env {:test_var "abc"} 
-	:exposed-ports {8000 8000}
-	:working-dir "/usr/src/app"  ":user "testuser" 
-	:network-mode "host"})
-	
-(docker/create {:connection conn :image "busybox:musl" 
-	:command "echo hello" :env {:test_var "abc"} 
-	:exposed-ports {8000 8000}
-	:working-dir "/usr/src/app"  ":user "testuser" 
-	:network-mode "host"})
+(docker/create conn {:image         "busybox:musl"
+                     :command       "echo hello"
+                     :env           {:test_var "abc"}
+                     :exposed-ports {8000 8000}
+                     :working-dir   "/usr/src/app"
+                     :user          "testuser"
+                     :network-mode  "host"})
+=> "9a9ce5dc847c"
+
+(docker/create {:connection    conn
+                :image         "busybox:musl"
+                :command       "echo hello"
+                :env           {:test_var "abc"}
+                :exposed-ports {8000 8000}
+                :working-dir   "/usr/src/app"
+                :user          "testuser"
+                :network-mode  "host"})
+=> "9a9ce5dc847c"
 ```
 
 #### Listing all available containers

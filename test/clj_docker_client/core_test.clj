@@ -87,6 +87,15 @@
       (let [container-id (create conn img "echo hello" {:k "v"} {})]
         (is (correct-id? container-id))
         (rm conn container-id)))
+    (testing "Creating a container with a map"
+      (let [container-id (create {:connection    conn
+                                  :image         img
+                                  :command       "echo hello"
+                                  :env           {:k "v"}
+                                  :exposed-ports {}
+                                  :network-mode  "host"})]
+        (is (correct-id? container-id))
+        (rm conn container-id)))
     (testing "Container lifecycle"
       (let [image "redis:alpine"
             _     (pull conn image)
@@ -129,12 +138,12 @@
         (is (map? output))
         (rm conn id)))
     (testing "Creation with working dir and user"
-     (let [id     (create conn img "sh -c 'pwd && whoami'" {} {} "/tmp" "root")
-           _      (start conn id)
-           _      (wait-container conn id)
-           output (logs conn id)]
-       (is (= ["/tmp" "root"] output)
-           (rm conn id))))
+      (let [id     (create conn img "sh -c 'pwd && whoami'" {} {} "/tmp" "root")
+            _      (start conn id)
+            _      (wait-container conn id)
+            output (logs conn id)]
+        (is (= ["/tmp" "root"] output)
+            (rm conn id))))
     (testing "Fetching container state"
       (let [id    (create conn img "echo hello" {} {})
             _     (start conn id)
