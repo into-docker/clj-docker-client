@@ -204,6 +204,18 @@ which closes it after use.
 ; Binds on 0.0.0.0 in the host by default.
 (docker/create conn "busybox:musl" "echo hello" {:env "testing"} {8000 8000} "/working/dir" "user")
 => "9a9ce5dc847c"
+
+(docker/create conn {:image "busybox:musl" 
+	:command "echo hello" :env {:test_var "abc"} 
+	:exposed-ports {8000 8000}
+	:working-dir "/usr/src/app"  ":user "testuser" 
+	:network-mode "host"})
+	
+(docker/create {:connection conn :image "busybox:musl" 
+	:command "echo hello" :env {:test_var "abc"} 
+	:exposed-ports {8000 8000}
+	:working-dir "/usr/src/app"  ":user "testuser" 
+	:network-mode "host"})
 ```
 
 #### Listing all available containers
@@ -540,18 +552,18 @@ Create a TarArchiveInputStream to process the file(s) in it.
 
 #### Connect a container to a network
 ```clojure
-(docker/network-connect "sky-net" "container id")
+(docker/network-connect conn "sky-net" "container id")
 => "13c274fc67e6"
 ```
 
 #### Disconnect a container from a network
 ```clojure
-(docker/network-disconnect "sky-net" "container id")
+(docker/network-disconnect conn "sky-net" "container id")
 => "13c274fc67e6"
 ```
 
 #### Remove a network
 ```clojure
-(docker/network-rm "sky-net")
+(docker/network-rm conn "sky-net")
 => "sky-net"
 ```
