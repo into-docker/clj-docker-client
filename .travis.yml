@@ -22,3 +22,5 @@ language: clojure
 
 jdk:
   - oraclejdk11
+
+script: lein kaocha
