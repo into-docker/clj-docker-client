@@ -224,7 +224,7 @@ Takes an optional key `as-stream?`. Returns an InputStream if passed as true. Th
                                                     :stdout true}
                                            :as-stream? true}))
 
-(react-to-stream events println) ; prints the logs line by line when they come.
+(react-to-stream log-stream println) ; prints the logs line by line when they come.
 ```
 
 And anything else is possible!
