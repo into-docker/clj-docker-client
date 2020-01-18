@@ -9,7 +9,9 @@
 
 An idiomatic, data-driven, REPL friendly Clojure Docker client inspired from Cognitect's AWS [client](https://github.com/cognitect-labs/aws-api).
 
-See this [README](https://github.com/lispyclouds/clj-docker-client/blob/38b269e8d0a4e705402244845f5de465dfdb3277/README.md) for documentation for versions before **0.4.0**
+See [this](https://cljdoc.org/d/lispyclouds/clj-docker-client/0.3.2/doc/readme) for documentation for versions before **0.4.0**.
+
+**The README here is for the current master branch and _may not reflect the released version_.**
 
 **Please raise issues here for any new feature requests!**
 
@@ -169,14 +171,18 @@ Takes an optional key `as-stream?`. Returns an InputStream if passed as true. Th
  :as-stream? true}
 ```
 
+### General guidelines
+- Head over to the Docker API docs to get more info on the type of parameters you should be sending. eg: this [page](https://docs.docker.com/engine/api/v1.40/) for `v1.40` API docs.
+- The type `stream` is mapped to `java.io.InputStream` and when the API needs a stream as an input, send an InputStream. When it returns a stream, the call can **possibly block** till the container or source is up and its recommended to pass the `as-stream?` param as true to the invoke call and read it asynchronously. See this [section](https://github.com/lispyclouds/clj-docker-client/tree/master#streaming-logs) for more info.
+
 ### Sample code for common scenarios
 
 #### Pulling an image
 ```clojure
 (def conn (docker/connect {:uri "unix:///var/run/docker.sock"}))
 
-(def images (client {:category :images
-                       :conn   conn}))
+(def images (docker/client {:category :images
+                            :conn   conn}))
 
 (docker/invoke images {:op     :ImageCreate
                        :params {:fromImage "busybox:musl"}})
@@ -184,8 +190,8 @@ Takes an optional key `as-stream?`. Returns an InputStream if passed as true. Th
 
 #### Creating a container
 ```clojure
-(def containers (client {:category :containers
-                         :conn     conn}))
+(def containers (docker/client {:category :containers
+                                :conn     conn}))
 
 (docker/invoke containers {:op     :ContainerCreate
                            :params {:name "conny"
@@ -225,6 +231,6 @@ And anything else is possible!
 
 ## License
 
-Copyright © 2020 Rahul De and contributors.
+Copyright © 2020 Rahul De and [contributors](https://github.com/lispyclouds/clj-docker-client/graphs/contributors).
 
 Distributed under the LGPLv3+ License. See LICENSE.
