@@ -169,6 +169,60 @@ Takes an optional key `as-stream?`. Returns an InputStream if passed as true. Th
  :as-stream? true}
 ```
 
+### Sample code for common scenarios
+
+#### Pulling an image
+```clojure
+(def conn (docker/connect {:uri "unix:///var/run/docker.sock"}))
+
+(def images (client {:category :images
+                       :conn   conn}))
+
+(docker/invoke images {:op     :ImageCreate
+                       :params {:fromImage "busybox:musl"}})
+```
+
+#### Creating a container
+```clojure
+(def containers (client {:category :containers
+                         :conn     conn}))
+
+(docker/invoke containers {:op     :ContainerCreate
+                           :params {:name "conny"
+                                    :body {:Image "busybox:musl"
+                                           :Cmd   "sh -c 'i=1; while :; do echo $i; sleep 1; i=$((i+1)); done"}}})
+```
+
+#### Starting a container
+```clojure
+
+(docker/invoke containers {:op     :ContainerStart
+                           :params {:id "conny"}})
+```
+
+#### Streaming logs
+```clojure
+; fn to react when data is available
+(defn react-to-stream
+  [stream reaction-fn]
+  (future
+    (with-open [rdr (clojure.java.io/reader stream)]
+       (loop [r (java.io.BufferedReader. rdr)]
+         (when-let [line (.readLine r)]
+         (reaction-fn line)
+         (recur r))))))
+
+(def log-stream (docker/invoke containers {:op     :ContainerLogs
+                                           :params {:id "conny"
+                                                    :follow true
+                                                    :stdout true}
+                                           :as-stream? true}))
+
+(react-to-stream events println) ; prints the logs line by line when they come.
+```
+
+And anything else is possible!
+
 ## License
 
 Copyright © 2020 Rahul De and contributors.
