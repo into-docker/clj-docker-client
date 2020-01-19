@@ -213,15 +213,15 @@ Takes an optional key `as-stream?`. Returns an InputStream if passed as true. Th
   [stream reaction-fn]
   (future
     (with-open [rdr (clojure.java.io/reader stream)]
-       (loop [r (java.io.BufferedReader. rdr)]
-         (when-let [line (.readLine r)]
-         (reaction-fn line)
-         (recur r))))))
+      (loop [r (java.io.BufferedReader. rdr)]
+        (when-let [line (.readLine r)]
+          (reaction-fn line)
+          (recur r))))))
 
-(def log-stream (docker/invoke containers {:op     :ContainerLogs
-                                           :params {:id "conny"
-                                                    :follow true
-                                                    :stdout true}
+(def log-stream (docker/invoke containers {:op         :ContainerLogs
+                                           :params     {:id     "conny"
+                                                        :follow true
+                                                        :stdout true}
                                            :as-stream? true}))
 
 (react-to-stream log-stream println) ; prints the logs line by line when they come.
