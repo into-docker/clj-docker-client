@@ -16,15 +16,13 @@
 (ns clj-docker-client.core-test
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io]
-            [clj-docker-client.core :refer :all])
-  (:import (okhttp3 OkHttpClient)))
+            [clj-docker-client.core :refer :all]))
 
 (def latest-version "v1.40")
 
 (deftest docker-connection
   (testing "successful connection to the socket"
-    (is (instance? OkHttpClient
-                   (connect {:uri "unix:///var/run/docker.sock"}))))
+    (is (map? (connect {:uri "unix:///var/run/docker.sock"}))))
 
   (testing "connection with usupported protocol"
     (is (thrown? IllegalArgumentException

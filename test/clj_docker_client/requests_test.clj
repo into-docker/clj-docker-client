@@ -28,7 +28,11 @@
 
 (deftest unix-sockets
   (testing "creating a unix socket client"
-    (is (instance? OkHttpClient (unix-socket-client "/var/run/docker.sock")))))
+    (let [conn (unix-socket-client "unix:///var/run/docker.sock")]
+      (is (and (contains? conn :socket)
+               (contains? conn :client)
+               (instance? java.net.Socket (:socket conn))
+               (instance? OkHttpClient (:client conn)))))))
 
 (deftest OkHttp-helpers
   (testing "changing an InputStream to a RequestBody"
@@ -110,6 +114,13 @@
 
   (testing "streaming response"
     (is (instance? InputStream
-                   (fetch {:conn       (unix-socket-client "/var/run/docker.sock")
-                           :url        "/_ping"
-                           :as-stream? true})))))
+                   (fetch {:conn (unix-socket-client "/var/run/docker.sock")
+                           :url  "/_ping"
+                           :as   :stream}))))
+
+  (testing "exposing socket"
+    (let [socket (fetch {:conn (unix-socket-client "/var/run/docker.sock")
+                         :url  "/_ping"
+                         :as   :socket})]
+      (is (instance? java.net.Socket socket))
+      (.close socket))))

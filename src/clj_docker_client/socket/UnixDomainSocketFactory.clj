@@ -17,30 +17,25 @@
   (:gen-class
    :extends javax.net.SocketFactory
    :init init
-   :state path
+   :state socket
    :constructors {[String] []}
-   :exposes-methods {createSocket createSocketSuper})
+   :exposes-methods {createSocket createSocketSuper}
+   :methods [[getSocket [] java.net.Socket]])
   (:import (java.io File)
-           (java.net InetAddress
-                     InetSocketAddress)
            (jnr.unixsocket UnixSocketChannel)
            (clj_docker_client.socket TunnelingUnixSocket)))
 
 (defn -init
   [^String path]
-  [[] (File. path)])
+  [[] (TunnelingUnixSocket. (File. path) (UnixSocketChannel/open))])
 
 (defn -createSocket
-  ([^clj_docker_client.socket.UnixDomainSocketFactory this]
-   (let [path    (.path this)
-         channel (UnixSocketChannel/open)]
-     (TunnelingUnixSocket. path channel)))
-  ([^clj_docker_client.socket.UnixDomainSocketFactory this ^String host ^Integer port]
-   (-> this
-       .createSocket
-       (.connect (InetSocketAddress. host port))))
-  ([^clj_docker_client.socket.UnixDomainSocketFactory this ^String host ^Integer port ^InetAddress _ ^Integer _]
-   (.createSocket this host port)))
+  [^clj_docker_client.socket.UnixDomainSocketFactory this]
+  (.socket this))
+
+(defn -getSocket
+  [^clj_docker_client.socket.UnixDomainSocketFactory this]
+  (.socket this))
 
 (comment
   (compile 'clj-docker-client.socket.UnixDomainSocketFactory)

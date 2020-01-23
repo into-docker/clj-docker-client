@@ -96,9 +96,13 @@
 
   Returns the resulting map.
 
-  For the body parsing, checks if the user has supplied only one body param,
-  and if its an InputStream, make _it_ the body."
-  [{:keys [category conn api-version]} {:keys [op params as-stream?]}]
+  Options are:
+  :op specifying the operation to invoke. Required.
+  :params specifying the params to be passed to the :op.
+  :as specifying the result. Can be either of :stream, :socket, :data. Defaults to :data.
+
+  If a :socket is requested, the underlying UNIX socket is returned."
+  [{:keys [category conn api-version]} {:keys [op params as]}]
   (when (some nil? [category conn op])
     (panic! ":category, :conn are required in client, :op is required in operation map"))
   (let [request-info   (spec/request-info-of category op api-version)
@@ -112,24 +116,26 @@
                             (reduce (partial spec/gather-request-params
                                              params)
                                     {}))
-        response       (req/fetch {:conn       conn
-                                   :url        (:path request-info)
-                                   :method     (:method request-info)
-                                   :query      query
-                                   :header     header
-                                   :body       (-> body vals first)
-                                   :path       path
-                                   :as-stream? as-stream?})
+        response       (req/fetch {:conn   conn
+                                   :url    (:path request-info)
+                                   :method (:method request-info)
+                                   :query  query
+                                   :header header
+                                   :body   (-> body vals first)
+                                   :path   path
+                                   :as     as})
         try-json-parse #(try
                           (json/read-value %
                                            (json/object-mapper
                                             {:decode-key-fn keyword}))
                           (catch Exception _ %))]
-    (if as-stream?
-      response
+    (case as
+      (:socket :stream) response
       (try-json-parse response))))
 
 (comment
+  (require '[clojure.java.io :as io])
+
   (-> (URI. "unix:///var/run/docker.sock")
       .getPath)
 
@@ -153,8 +159,8 @@
               :method :put
               :query  {:path "/root/src"}
               :body   (-> "src.tar.gz"
-                          clojure.java.io/file
-                          clojure.java.io/input-stream)})
+                          io/file
+                          io/input-stream)})
   ;; PLANNED API
 
   (def conn (connect {:uri "unix:///var/run/docker.sock"}))
@@ -174,7 +180,18 @@
 
   (ops containers)
 
-  (doc containers :ContainerList)
+  (doc containers :ContainerAttach)
+
+  (def sock
+    (invoke containers {:op     :ContainerAttach
+                        :params {:id     "conny"
+                                 :stream true
+                                 :stdin  true}
+                        :as     :socket}))
+
+  (io/copy "hello ohai" (.getOutputStream sock))
+
+  (.close sock)
 
   (invoke containers {:op     :ContainerList
                       :params {:all true}})
@@ -200,8 +217,8 @@
 
   (invoke pinger {:op :SystemPing})
 
-  (invoke containers {:op         :ContainerLogs
-                      :params     {:id     "conny"
-                                   :stdout true
-                                   :follow true}
-                      :as-stream? true}))
+  (invoke containers {:op     :ContainerLogs
+                      :params {:id     "conny"
+                               :stdout true
+                               :follow true}
+                      :as     :stream}))

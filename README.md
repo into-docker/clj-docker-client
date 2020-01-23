@@ -163,17 +163,17 @@ The operation map is of the following structure:
  :params {:param-1 "value1"
           :param-2 true}}
 ```
-Takes an optional key `as-stream?`. Returns an InputStream if passed as true. This is useful for streaming responses like logs, events etc, which run till the container is up.
+Takes an optional key `as`. Defaults to `:data`. Returns an InputStream if passed as `:stream`, the raw underlying UNIX socket if passed as `:socket`. `:stream` is useful for streaming responses like logs, events etc, which run till the container is up. `:socket` is useful for events when bidirectional streams are returned by docker in operations like `:ContainerAttach`.
 ```clojure
-{:op         :NameOfOp
- :params     {:param-1 "value1"
-              :param-2 true}
- :as-stream? true}
+{:op     :NameOfOp
+ :params {:param-1 "value1"
+          :param-2 true}
+ :as?    :stream}
 ```
 
 ### General guidelines
 - Head over to the Docker API docs to get more info on the type of parameters you should be sending. eg: this [page](https://docs.docker.com/engine/api/v1.40/) for `v1.40` API docs.
-- The type `stream` is mapped to `java.io.InputStream` and when the API needs a stream as an input, send an InputStream. When it returns a stream, the call can **possibly block** till the container or source is up and its recommended to pass the `as-stream?` param as true to the invoke call and read it asynchronously. See this [section](https://github.com/lispyclouds/clj-docker-client/tree/master#streaming-logs) for more info.
+- The type `stream` is mapped to `java.io.InputStream` and when the API needs a stream as an input, send an InputStream. When it returns a stream, the call can **possibly block** till the container or source is up and its recommended to pass the `as` param as `:stream` to the invoke call and read it asynchronously. See this [section](https://github.com/lispyclouds/clj-docker-client/tree/master#streaming-logs) for more info.
 
 ### Sample code for common scenarios
 
@@ -218,13 +218,32 @@ Takes an optional key `as-stream?`. Returns an InputStream if passed as true. Th
           (reaction-fn line)
           (recur r))))))
 
-(def log-stream (docker/invoke containers {:op         :ContainerLogs
-                                           :params     {:id     "conny"
-                                                        :follow true
-                                                        :stdout true}
-                                           :as-stream? true}))
+(def log-stream (docker/invoke containers {:op     :ContainerLogs
+                                           :params {:id     "conny"
+                                                    :follow true
+                                                    :stdout true}
+                                           :as     :stream}))
 
 (react-to-stream log-stream println) ; prints the logs line by line when they come.
+```
+
+#### Attach to a container and send data to stdin
+```clojure
+(docker/invoke containers {:op     :ContainerCreate
+                           :params {:name "conny-reader"
+                                    :body {:Image "busybox:musl"
+                                           :Cmd   "sh -c 'cat - >/out'"}}})
+
+;; This is a raw bidirectional java.io.Socket, so both reads and writes are possible.
+(def sock (docker/invoke containers {:op     :ContainerAttach
+                                     :params {:id     "conny-reader"
+                                              :stream true
+                                              :stdin  true}
+                                     :as     :socket}))
+
+(clojure.java.io/copy "hello" (.getOutputStream sock))
+
+(.close sock) ; Important to free up resources.
 ```
 
 And anything else is possible!

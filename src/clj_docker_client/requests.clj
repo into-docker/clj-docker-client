@@ -31,11 +31,16 @@
            (clj_docker_client.socket UnixDomainSocketFactory)))
 
 (defn unix-socket-client
-  "Constructs a client for a UNIX socket"
+  "Constructs a client for a UNIX socket.
+
+  Also returns the underlying socket for direct access."
   [^String path]
-  (-> (OkHttpClient$Builder.)
-      (.socketFactory (UnixDomainSocketFactory. path))
-      .build))
+  (let [socket-factory (UnixDomainSocketFactory. path)
+        client         (-> (OkHttpClient$Builder.)
+                           (.socketFactory socket-factory)
+                           .build)]
+    {:socket (.getSocket socket-factory)
+     :client client}))
 
 (defn stream->req-body
   "Converts an InputStream to OkHttp RequestBody."
@@ -116,20 +121,25 @@
 (defn fetch
   "Performs the request.
 
-  If :as-stream? is passed as true, returns an InputStream."
-  [{:keys [^OkHttpClient conn as-stream?] :as args}]
-  (let [request  (build-request (update args
+  If :as is passed as :stream, returns an InputStream.
+  If passed as :socket, returns the underlying UNIX socket for direct I/O."
+  [{:keys [conn as] :as args}]
+  (let [client   ^OkHttpClient (:client conn)
+        request  (build-request (update args
                                         :url
                                         #(format "http://localhost%s" %)))
-        response (-> conn
+        response (-> client
                      (.newCall request)
                      .execute
                      .body)]
-    (if as-stream?
-      (.byteStream response)
+    (case as
+      :socket (:socket conn)
+      :stream (.byteStream response)
       (.string response))))
 
 (comment
+  (unix-socket-client "/var/run/docker.sock")
+
   (stream->req-body (java.io.FileInputStream. (java.io.File. "README.md")))
 
   (Pattern/quote "\\{([a-id].*?)\\}")
