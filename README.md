@@ -163,7 +163,7 @@ The operation map is of the following structure:
  :params {:param-1 "value1"
           :param-2 true}}
 ```
-Takes an optional key `as`. Defaults to `:data`. Returns an InputStream if passed as `:stream`, the raw underlying UNIX socket if passed as `:socket`. `:stream` is useful for streaming responses like logs, events etc, which run till the container is up. `:socket` is useful for events when bidirectional streams are returned by docker in operations like `:ContainerAttach`.
+Takes an optional key `as`. Defaults to `:data`. Returns an InputStream if passed as `:stream`, the raw underlying network socket if passed as `:socket`. `:stream` is useful for streaming responses like logs, events etc, which run till the container is up. `:socket` is useful for events when bidirectional streams are returned by docker in operations like `:ContainerAttach`.
 ```clojure
 {:op     :NameOfOp
  :params {:param-1 "value1"
@@ -229,12 +229,8 @@ Takes an optional key `as`. Defaults to `:data`. Returns an InputStream if passe
 
 #### Attach to a container and send data to stdin
 ```clojure
-(docker/invoke containers {:op     :ContainerCreate
-                           :params {:name "conny-reader"
-                                    :body {:Image "busybox:musl"
-                                           :Cmd   "sh -c 'cat - >/out'"}}})
-
-;; This is a raw bidirectional java.io.Socket, so both reads and writes are possible.
+;; This is a raw bidirectional java.net.Socket, so both reads and writes are possible.
+;; conny-reader has been started with: docker run -d -i --name conny-reader alpine:latest sh -c "cat - >/out"
 (def sock (docker/invoke containers {:op     :ContainerAttach
                                      :params {:id     "conny-reader"
                                               :stream true
@@ -243,7 +239,7 @@ Takes an optional key `as`. Defaults to `:data`. Returns an InputStream if passe
 
 (clojure.java.io/copy "hello" (.getOutputStream sock))
 
-(.close sock) ; Important to free up resources.
+(.close sock) ; Important for freeing up resources.
 ```
 
 And anything else is possible!

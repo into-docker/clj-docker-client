@@ -205,8 +205,8 @@
                       :params {:path        "/root"
                                :id          "cp-this"
                                :inputStream (-> "src.tar.gz"
-                                                clojure.java.io/file
-                                                clojure.java.io/input-stream)}})
+                                                io/file
+                                                io/input-stream)}})
 
   (doc containers :ContainerCreate)
 
