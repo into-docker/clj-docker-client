@@ -196,7 +196,9 @@ Takes an optional key `as`. Defaults to `:data`. Returns an InputStream if passe
 (docker/invoke containers {:op     :ContainerCreate
                            :params {:name "conny"
                                     :body {:Image "busybox:musl"
-                                           :Cmd   "sh -c 'i=1; while :; do echo $i; sleep 1; i=$((i+1)); done"}}})
+                                           :Cmd   ["sh"
+                                                   "-c"
+                                                   "i=1; while :; do echo $i; sleep 1; i=$((i+1)); done"]}}})
 ```
 
 #### Starting a container
