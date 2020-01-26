@@ -13,7 +13,7 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
-name: Unit tests
+name: Tests
 
 on: [push]
 
