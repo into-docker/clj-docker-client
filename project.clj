@@ -29,5 +29,17 @@
   :aot [clj-docker-client.socket.TunnelingUnixSocket
         clj-docker-client.socket.UnixDomainSocketFactory]
   :resource-paths ["resources"]
-  :profiles {:kaocha {:dependencies [[lambdaisland/kaocha "0.0-573"]]}}
+  :profiles {:kaocha {:dependencies [[lambdaisland/kaocha "0.0-573"]]}
+             :rebl   {:repl-options   {:nrepl-middleware [nrebl.middleware/wrap-nrebl]}
+                      :injections     [(require '[cognitect.rebl :as rebl])]
+                      :dependencies   [[rickmoynihan/nrebl.middleware "0.3.1"]
+                                       [org.clojure/core.async "0.7.559"]
+                                       [lein-cljfmt "0.6.6"]
+                                       [org.openjfx/javafx-fxml "11.0.2"]
+                                       [org.openjfx/javafx-controls "11.0.2"]
+                                       [org.openjfx/javafx-media "11.0.2"]
+                                       [org.openjfx/javafx-swing "11.0.2"]
+                                       [org.openjfx/javafx-base "11.0.2"]
+                                       [org.openjfx/javafx-web "11.0.2"]]
+                      :resource-paths [~(System/getenv "REBL_PATH")]}}
   :aliases {"kaocha" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner"]})

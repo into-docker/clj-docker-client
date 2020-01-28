@@ -55,6 +55,16 @@ This uses Docker's HTTP REST API to run. See the section **API version matrix** 
 
 See the [page](https://docs.docker.com/develop/sdk/) about the docker REST API to learn more about the params to pass.
 
+### Developing with Cognitect [REBL](http://rebl.cognitect.com/)
+Since this is fully data driven, using REBL is really beneficial as it allows us to _walk_ through the output from Docker, see potential errors and be more productive with instant visual feedback.
+
+This assumes Java 11+:
+- [Download](http://rebl.cognitect.com/download.html) and unzip the REBL jar to a known location.
+- Start the leiningen REPL with: `REBL_PATH=<PATH_TO_REBL_JAR> lein with-profile +rebl repl`.
+- Connect your editor of choice to this REPL or start using the REBL/REPL directly.
+- Evaluate `(rebl/ui)` to fire up the REBL UI.
+- Then repeat after me 3 times: _ALL HAIL THE DATA_! 🙏🏽
+
 ### Usage
 
 ```clojure
@@ -229,7 +239,7 @@ Takes an optional key `as`. Defaults to `:data`. Returns an InputStream if passe
 (react-to-stream log-stream println) ; prints the logs line by line when they come.
 ```
 
-#### Attach to a container and send data to stdin
+#### Attach to a container and send data to stdin (master only)
 ```clojure
 ;; This is a raw bidirectional java.net.Socket, so both reads and writes are possible.
 ;; conny-reader has been started with: docker run -d -i --name conny-reader alpine:latest sh -c "cat - >/out"
