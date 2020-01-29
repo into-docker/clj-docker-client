@@ -7,6 +7,8 @@
 [![Dependencies Status](https://versions.deps.co/lispyclouds/clj-docker-client/status.png)](https://versions.deps.co/lispyclouds/clj-docker-client)
 [![Downloads](https://versions.deps.co/lispyclouds/clj-docker-client/downloads.svg)](https://versions.deps.co/lispyclouds/clj-docker-client)
 
+[![project chat](https://img.shields.io/badge/slack-join_chat-brightgreen.svg)](https://clojurians.slack.com/messages/C0PME9N9X)
+
 An idiomatic, data-driven, REPL friendly Clojure Docker client inspired from Cognitect's AWS [client](https://github.com/cognitect-labs/aws-api).
 
 See [this](https://cljdoc.org/d/lispyclouds/clj-docker-client/0.3.2/doc/readme) for documentation for versions before **0.4.0**.
@@ -252,6 +254,41 @@ Takes an optional key `as`. Defaults to `:data`. Returns an InputStream if passe
 (clojure.java.io/copy "hello" (.getOutputStream sock))
 
 (.close sock) ; Important for freeing up resources.
+```
+
+### Not so common scenarios
+
+#### Accessing undocumented/experimental Docker APIs
+There are some cases where you may need access to an API that is either experimental or is not in the swagger docs.
+Docker [checkpoint](https://docs.docker.com/engine/reference/commandline/checkpoint/) is one such example. Thanks [@mk](https://github.com/mk) for bringing it up!
+
+Since this uses the published APIs from the swagger spec, the way to access them is to use the lower level fn `fetch` from the `clj-docker-client/requests` ns. The caveat is the **response will be totally raw(string or stream)**.
+```clojure
+(require '[clj-docker-client.requests :as req])
+
+(def containers (docker/client {:category :containers
+                                :conn     conn}))
+
+;; This is the undocumented API in the Docker Daemon.
+;; See https://github.com/moby/moby/pull/22049/files#diff-8038ade87553e3a654366edca850f83dR11
+(req/fetch {:conn conn
+            :url  "/containers/conny/checkpoints"})
+```
+
+More examples of low level calls:
+```clojure
+;; Ping the server
+(req/fetch {:conn (connect {:uri "unix:///var/run/docker.sock"})
+            :url  "/_ping"})
+
+;; Copy a folder to a container
+(req/fetch {:conn   (connect {:uri "unix:///var/run/docker.sock"})
+            :url    "/containers/conny/archive"
+            :method :put
+            :query  {:path "/root/src"}
+            :body   (-> "src.tar.gz"
+                        io/file
+                        io/input-stream)})
 ```
 
 And anything else is possible!
