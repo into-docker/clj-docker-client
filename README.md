@@ -263,26 +263,34 @@ There are some cases where you may need access to an API that is either experime
 Docker [checkpoint](https://docs.docker.com/engine/reference/commandline/checkpoint/) is one such example. Thanks [@mk](https://github.com/mk) for bringing it up!
 
 Since this uses the published APIs from the swagger spec, the way to access them is to use the lower level fn `fetch` from the `clj-docker-client/requests` ns. The caveat is the **response will be totally raw(string or stream)**.
+
+fetch takes the following params as a map:
+- conn: the connection to the daemon. Required.
+- url: the relative path to the operation. Required.
+- method: the method of the HTTP request as a keyword. Default: `:get`.
+- query: the map of key-values to be passed as query params.
+- path: the map of key-values to be passed as path params. Needed for interpolated path values like `/containers/{id}/checkpoints`. Pass `{:id "conny"}` here.
+- header: the map of key-values to be passed as HEADER params.
+- body: the stream or map(will be converted to JSON) to be passed as body.
+
 ```clojure
 (require '[clj-docker-client.requests :as req])
-
-(def containers (docker/client {:category :containers
-                                :conn     conn}))
+(require '[clj-docker-client.core :as docker])
 
 ;; This is the undocumented API in the Docker Daemon.
 ;; See https://github.com/moby/moby/pull/22049/files#diff-8038ade87553e3a654366edca850f83dR11
-(req/fetch {:conn conn
+(req/fetch {:conn (docker/connect {:uri "unix:///var/run/docker.sock"})
             :url  "/containers/conny/checkpoints"})
 ```
 
 More examples of low level calls:
 ```clojure
 ;; Ping the server
-(req/fetch {:conn (connect {:uri "unix:///var/run/docker.sock"})
+(req/fetch {:conn (docker/connect {:uri "unix:///var/run/docker.sock"})
             :url  "/_ping"})
 
 ;; Copy a folder to a container
-(req/fetch {:conn   (connect {:uri "unix:///var/run/docker.sock"})
+(req/fetch {:conn   (docker/connect {:uri "unix:///var/run/docker.sock"})
             :url    "/containers/conny/archive"
             :method :put
             :query  {:path "/root/src"}
