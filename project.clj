@@ -29,7 +29,7 @@
   :aot [clj-docker-client.socket.TunnelingUnixSocket
         clj-docker-client.socket.UnixDomainSocketFactory]
   :resource-paths ["resources"]
-  :profiles {:kaocha {:dependencies [[lambdaisland/kaocha "0.0-573"]]}
+  :profiles {:kaocha {:dependencies [[lambdaisland/kaocha "0.0-581"]]}
              :rebl   {:repl-options   {:nrepl-middleware [nrebl.middleware/wrap-nrebl]}
                       :injections     [(require '[cognitect.rebl :as rebl])]
                       :dependencies   [[rickmoynihan/nrebl.middleware "0.3.1"]
