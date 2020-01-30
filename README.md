@@ -262,7 +262,7 @@ Takes an optional key `as`. Defaults to `:data`. Returns an InputStream if passe
 There are some cases where you may need access to an API that is either experimental or is not in the swagger docs.
 Docker [checkpoint](https://docs.docker.com/engine/reference/commandline/checkpoint/) is one such example. Thanks [@mk](https://github.com/mk) for bringing it up!
 
-Since this uses the published APIs from the swagger spec, the way to access them is to use the lower level fn `fetch` from the `clj-docker-client/requests` ns. The caveat is the **response will be totally raw(string or stream)**.
+Since this uses the published APIs from the swagger spec, the way to access them is to use the lower level fn `fetch` from the `clj-docker-client/requests` ns. The caveat is the **response will be totally raw(data, stream or the socket itself)**.
 
 fetch takes the following params as a map:
 - conn: the connection to the daemon. Required.
@@ -272,6 +272,7 @@ fetch takes the following params as a map:
 - path: the map of key-values to be passed as path params. Needed for interpolated path values like `/containers/{id}/checkpoints`. Pass `{:id "conny"}` here.
 - header: the map of key-values to be passed as HEADER params.
 - body: the stream or map(will be converted to JSON) to be passed as body.
+- as: takes the kind of response expected. One of :stream, :socket or :data. Same as `invoke`. Default: `:data`.
 
 ```clojure
 (require '[clj-docker-client.requests :as req])
