@@ -33,11 +33,15 @@
 (deftest getting-paths-of-category
   (testing "paths of containers in latest spec"
     (is (every? #(s/starts-with? % "/containers")
-                (map first (get-paths-of-category :containers nil)))))
+                (->> (get-paths-of-category :containers nil)
+                     :paths
+                     (map first)))))
 
   (testing "paths of containers in versioned spec"
     (is (every? #(s/starts-with? % "/containers")
-                (map first (get-paths-of-category :containers latest-version))))))
+                (->> (get-paths-of-category :containers latest-version)
+                     :paths
+                     (map first))))))
 
 (deftest extractions
   (let [desc {"get" {"summary"     "a-summary"
@@ -63,10 +67,14 @@
 
 (deftest creating-request-info-map
   (testing "create a request map of an op in a category of latest version"
-    (is (map? (request-info-of :images :ImageList nil))))
+    (let [info (request-info-of :images :ImageList nil)]
+      (is (= #{:path :method :doc :params} (into #{} (keys info))))
+      (is (s/starts-with? (:path info)
+                          (str "/" latest-version)))))
 
   (testing "create a request map of an op in a category of specified version"
-    (is (map? (request-info-of :images :ImageList latest-version)))))
+    (is (s/starts-with? (:path (request-info-of :images :ImageList "v1.30"))
+                        "/v1.30"))))
 
 (deftest categorizing-request-params
   (testing "annotated params are correctly categorized"

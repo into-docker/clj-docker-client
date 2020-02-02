@@ -38,11 +38,15 @@
            (yaml/parse-string :keywords false))))))
 
 (defn get-paths-of-category
-  "Fetches the paths section of the swagger.yaml filtered by paths starting with category."
+  "Fetches the paths section of the swagger.yaml and the version.
+
+  Filters paths starting with the specified category."
   [category version]
-  (->> (get (fetch-spec version) "paths")
-       (filter #(s/starts-with? (key %)
-                                (format "/%s" (-> category name str))))))
+  (let [spec  (fetch-spec version)]
+    {:version (get-in spec ["info" "version"])
+     :paths   (filter #(s/starts-with? (key %)
+                                       (format "/%s" (-> category name str)))
+                      (get spec "paths"))}))
 
 (defn ->op
   "{req-method1 {summary     summary
@@ -87,17 +91,20 @@
 (defn request-info-of
   "Returns a map of path, method, doc and params of an op of a category.
 
+  Prefixes the paths with the version from spec.
+
   Returns nil if not found."
   [category op version]
-  (->> (get-paths-of-category category version)
-       (map ->endpoint)
-       (map #(assoc-in % [:ops] (find-op-meta op (:ops %))))
-       (filter #(some? (:ops %)))
-       (map #(hash-map :path (:path %)
-                       :method (get-in % [:ops :method])
-                       :doc (get-in % [:ops :doc])
-                       :params (get-in % [:ops :params])))
-       first))
+  (let [{:keys [paths version]} (get-paths-of-category category version)]
+    (->> paths
+         (map ->endpoint)
+         (map #(assoc-in % [:ops] (find-op-meta op (:ops %))))
+         (filter #(some? (:ops %)))
+         (map #(hash-map :path (format "/v%s%s" version (:path %))
+                         :method (get-in % [:ops :method])
+                         :doc (get-in % [:ops :doc])
+                         :params (get-in % [:ops :params])))
+         first)))
 
 (defn gather-request-params
   "Reducer fn generating categorized params from supplied params.
@@ -114,15 +121,18 @@
                  (param supplied-params)))))
 
 (comment
-  (-> (io/resource "docker.yaml")
+  (-> (io/resource "api/latest.yaml")
       slurp
-      (yaml/parse-string :keywords false))
+      (yaml/parse-string :keywords false)
+      (get-in ["info" "version"]))
 
   (->> (get-paths-of-category :images nil)
+       :paths
        (take 1)
        (map ->endpoint))
 
   (->> (get-paths-of-category :containers nil)
+       :paths
        (map ->endpoint)
        (mapcat :ops)
        (take 1)

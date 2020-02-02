@@ -65,7 +65,7 @@
     (panic! ":category, :conn are required"))
   (assoc args
          :paths
-         (spec/get-paths-of-category category api-version)))
+         (:paths (spec/get-paths-of-category category api-version))))
 
 (defn ops
   "Returns the supported ops for a client."
@@ -144,7 +144,7 @@
   (connect {:uri "https://my.docker.host:6375"})
 
   (req/fetch {:conn (connect {:uri "unix:///var/run/docker.sock"})
-              :url  "/_ping"})
+              :url  "/v1.30/_ping"})
 
   (req/fetch {:conn   (connect {:uri "unix:///var/run/docker.sock"})
               :url    "/containers/create"
@@ -212,8 +212,9 @@
 
   (invoke images {:op :ImageList})
 
-  (def pinger (client {:category :_ping
-                       :conn     conn}))
+  (def pinger (client {:category    :_ping
+                       :conn        conn
+                       :api-version "v1.25"}))
 
   (invoke pinger {:op :SystemPing})
 

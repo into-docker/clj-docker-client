@@ -269,7 +269,7 @@ fetch takes the following params as a map:
 - url: the relative path to the operation. Required.
 - method: the method of the HTTP request as a keyword. Default: `:get`.
 - query: the map of key-values to be passed as query params.
-- path: the map of key-values to be passed as path params. Needed for interpolated path values like `/containers/{id}/checkpoints`. Pass `{:id "conny"}` here.
+- path: the map of key-values to be passed as path params. Needed for interpolated path values like `/v1.40/containers/{id}/checkpoints`. Pass `{:id "conny"}` here.
 - header: the map of key-values to be passed as HEADER params.
 - body: the stream or map(will be converted to JSON) to be passed as body.
 - as: takes the kind of response expected. One of :stream, :socket or :data. Same as `invoke`. Default: `:data`.
@@ -281,18 +281,18 @@ fetch takes the following params as a map:
 ;; This is the undocumented API in the Docker Daemon.
 ;; See https://github.com/moby/moby/pull/22049/files#diff-8038ade87553e3a654366edca850f83dR11
 (req/fetch {:conn (docker/connect {:uri "unix:///var/run/docker.sock"})
-            :url  "/containers/conny/checkpoints"})
+            :url  "/v1.40/containers/conny/checkpoints"})
 ```
 
 More examples of low level calls:
 ```clojure
 ;; Ping the server
 (req/fetch {:conn (docker/connect {:uri "unix:///var/run/docker.sock"})
-            :url  "/_ping"})
+            :url  "/v1.40/_ping"})
 
 ;; Copy a folder to a container
 (req/fetch {:conn   (docker/connect {:uri "unix:///var/run/docker.sock"})
-            :url    "/containers/conny/archive"
+            :url    "/v1.40/containers/conny/archive"
             :method :put
             :query  {:path "/root/src"}
             :body   (-> "src.tar.gz"
