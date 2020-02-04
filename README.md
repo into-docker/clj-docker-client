@@ -80,6 +80,16 @@ Connect to the docker daemon's [UNIX socket](https://en.wikipedia.org/wiki/Unix_
 ```clojure
 (def conn (docker/connect {:uri "unix:///var/run/docker.sock"}))
 ```
+Takes optional timeout parameters in **ms**:
+```clojure
+;; All values default to 0, which signifies no timeout.
+(def conn (connect {:uri             "unix:///var/run/docker.sock"
+                    :connect-timeout 10
+                    :read-timeout    2000
+                    :write-timeout   2000
+                    :call-timeout    30000}))
+```
+Thanks [olymk2](https://github.com/olymk2) for the suggestion.
 
 #### categories
 Lists the categories of operations supported. Can be bound to an API version.
@@ -241,7 +251,7 @@ Takes an optional key `as`. Defaults to `:data`. Returns an InputStream if passe
 (react-to-stream log-stream println) ; prints the logs line by line when they come.
 ```
 
-#### Attach to a container and send data to stdin (master only)
+#### Attach to a container and send data to stdin
 ```clojure
 ;; This is a raw bidirectional java.net.Socket, so both reads and writes are possible.
 ;; conny-reader has been started with: docker run -d -i --name conny-reader alpine:latest sh -c "cat - >/out"
@@ -301,6 +311,9 @@ More examples of low level calls:
 ```
 
 And anything else is possible!
+
+### Known issues/caveats:
+- Reusing of UNIX sockets for multiple open connections is currently not supported. See [#20](https://github.com/lispyclouds/clj-docker-client/issues/20). Workaround is to use new connections at the cost of slightly more resource usage.
 
 ## License
 
