@@ -17,22 +17,23 @@
   (:require [clojure.test :refer :all]
             [clojure.string :as s]
             [clojure.java.io :as io]
-            [clj-docker-client.requests :refer :all])
+            [clj-docker-client.requests :refer :all]
+            [clj-docker-client.core :as core])
   (:import (java.io InputStream)
            (okhttp3 HttpUrl
                     HttpUrl$Builder
-                    OkHttpClient
+                    OkHttpClient$Builder
                     Request
                     RequestBody
                     Request$Builder)))
 
 (deftest unix-sockets
-  (testing "creating a unix socket client"
-    (let [conn (unix-socket-client "unix:///var/run/docker.sock")]
+  (testing "creating a unix socket client builder"
+    (let [conn (unix-socket-client-builder "unix:///var/run/docker.sock")]
       (is (and (contains? conn :socket)
-               (contains? conn :client)
+               (contains? conn :builder)
                (instance? java.net.Socket (:socket conn))
-               (instance? OkHttpClient (:client conn)))))))
+               (instance? OkHttpClient$Builder (:builder conn)))))))
 
 (deftest OkHttp-helpers
   (testing "changing an InputStream to a RequestBody"
@@ -109,17 +110,17 @@
 
 (deftest fetching-stuff
   (testing "normal response"
-    (is (= "OK" (fetch {:conn (unix-socket-client "/var/run/docker.sock")
+    (is (= "OK" (fetch {:conn (core/connect {:uri "unix:///var/run/docker.sock"})
                         :url  "/_ping"}))))
 
   (testing "streaming response"
     (is (instance? InputStream
-                   (fetch {:conn (unix-socket-client "/var/run/docker.sock")
+                   (fetch {:conn (core/connect {:uri "unix:///var/run/docker.sock"})
                            :url  "/_ping"
                            :as   :stream}))))
 
   (testing "exposing socket"
-    (let [socket (fetch {:conn (unix-socket-client "/var/run/docker.sock")
+    (let [socket (fetch {:conn (core/connect {:uri "unix:///var/run/docker.sock"})
                          :url  "/_ping"
                          :as   :socket})]
       (is (instance? java.net.Socket socket))

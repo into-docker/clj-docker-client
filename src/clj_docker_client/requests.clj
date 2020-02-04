@@ -30,17 +30,16 @@
                  Okio)
            (clj_docker_client.socket UnixDomainSocketFactory)))
 
-(defn unix-socket-client
-  "Constructs a client for a UNIX socket.
+(defn unix-socket-client-builder
+  "Constructs a client builder for a UNIX socket.
 
   Also returns the underlying socket for direct access."
   [^String path]
   (let [socket-factory (UnixDomainSocketFactory. path)
-        client         (-> (OkHttpClient$Builder.)
-                           (.socketFactory socket-factory)
-                           .build)]
-    {:socket (.getSocket socket-factory)
-     :client client}))
+        builder        (.socketFactory (OkHttpClient$Builder.)
+                                       socket-factory)]
+    {:socket  (.getSocket socket-factory)
+     :builder builder}))
 
 (defn stream->req-body
   "Converts an InputStream to OkHttp RequestBody."
@@ -138,7 +137,7 @@
       (.string response))))
 
 (comment
-  (unix-socket-client "/var/run/docker.sock")
+  (unix-socket-client-builder "/var/run/docker.sock")
 
   (stream->req-body (java.io.FileInputStream. (java.io.File. "README.md")))
 

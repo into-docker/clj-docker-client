@@ -18,7 +18,9 @@
             [jsonista.core :as json]
             [clj-docker-client.requests :as req]
             [clj-docker-client.specs :as spec])
-  (:import (java.net URI)))
+  (:import (java.time Duration)
+           (java.net URI)
+           (okhttp3 OkHttpClient$Builder)))
 
 (defn- panic!
   "Helper for erroring out for wrong args."
@@ -28,19 +30,31 @@
 (defn connect
   "Connects to the provided :uri in the connection options.
 
+  Optionally takes connect, read, write and call timeout in ms.
+  All are set to 0 by default, which is no timeout.
+
   Returns the connection.
 
   The url must be fully qualified with the protocol.
   eg. unix:///var/run/docker.sock or https://my.docker.host:6375"
-  [{:keys [uri]}]
+  [{:keys [uri connect-timeout read-timeout write-timeout call-timeout]}]
   (when (nil? uri)
     (panic! ":uri is required"))
-  (let [uri    (URI. uri)
-        scheme (.getScheme uri)
-        path   (.getPath uri)]
-    (case scheme
-      "unix" (req/unix-socket-client path)
-      (panic! (format "Protocol '%s' not supported yet." scheme)))))
+  (let [uri              (URI. uri)
+        scheme           (.getScheme uri)
+        path             (.getPath uri)
+        {:keys [^OkHttpClient$Builder builder
+                socket]} (case scheme
+                           "unix" (req/unix-socket-client-builder path)
+                           (panic! (format "Protocol '%s' not supported yet." scheme)))
+        timeout-from     #(Duration/ofMillis (or % 0))
+        builder+opts     (-> builder
+                             (.connectTimeout (timeout-from connect-timeout))
+                             (.readTimeout (timeout-from read-timeout))
+                             (.writeTimeout (timeout-from write-timeout))
+                             (.callTimeout (timeout-from call-timeout)))]
+    {:client (.build builder+opts)
+     :socket socket}))
 
 (defn categories
   "Returns the available categories.
@@ -163,7 +177,11 @@
                           io/input-stream)})
   ;; PLANNED API
 
-  (def conn (connect {:uri "unix:///var/run/docker.sock"}))
+  (def conn (connect {:uri             "unix:///var/run/docker.sock"
+                      :connect-timeout 0
+                      :read-timeout    0
+                      :write-timeout   0
+                      :call-timeout    0}))
 
   (categories)
 

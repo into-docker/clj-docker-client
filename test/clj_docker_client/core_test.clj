@@ -26,7 +26,17 @@
 
   (testing "connection with usupported protocol"
     (is (thrown? IllegalArgumentException
-                 (connect {:uri "http://this-does-not-work"})))))
+                 (connect {:uri "http://this-does-not-work"}))))
+
+  (testing "connection with set timeouts"
+    (let [{:keys [client]} (connect {:uri             "unix:///var/run/docker.sock"
+                                     :connect-timeout 10
+                                     :read-timeout    2000
+                                     :write-timeout   3000})]
+      (is (and (= 10 (.connectTimeoutMillis client))
+               (= 2000 (.readTimeoutMillis client))
+               (= 3000 (.writeTimeoutMillis client))
+               (= 0 (.callTimeoutMillis client)))))))
 
 (deftest fetch-categories
   (testing "listing all available categories in latest version"
