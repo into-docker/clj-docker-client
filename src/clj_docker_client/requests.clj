@@ -90,14 +90,14 @@
 
 (defn build-request
   "Builds a Request object for OkHttp."
-  [{:keys [method ^String url query headers path body]}]
+  [{:keys [method ^String url query header path body]}]
   (let [formatted-url (interpolate-path url path)
         url-builder   (add-params (.newBuilder (HttpUrl/parse formatted-url))
                                   query
                                   :query)
         req-builder   (-> (Request$Builder.)
                           (.url (.build ^HttpUrl$Builder url-builder))
-                          (add-params headers :header))
+                          (add-params header :header))
         req-body      (cond
                         (nil? body)
                         (RequestBody/create nil "")
