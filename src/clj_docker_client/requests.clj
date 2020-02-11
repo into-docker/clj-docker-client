@@ -101,9 +101,11 @@
         req-body      (cond
                         (nil? body)
                         (RequestBody/create nil "")
+
                         (map? body)
                         (RequestBody/create (json/write-value-as-string body)
                                             (MediaType/get "application/json; charset=utf-8"))
+
                         (instance? InputStream body)
                         (stream->req-body body))
         req           (case method

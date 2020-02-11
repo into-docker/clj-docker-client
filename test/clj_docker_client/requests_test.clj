@@ -95,18 +95,27 @@
   (testing "build a post request with a map body"
     (let [req       (build-request {:method :post
                                     :url    "http://aurl"
-                                    :body   {:key "value"}})
-          mime-type (-> req .body .contentType str)]
-      (is (= "application/json; charset=utf-8" mime-type))))
+                                    :body   {:key "value"}})]
+      (is (= "application/json; charset=utf-8"
+             (-> req .body .contentType str)))))
 
   (testing "build a post request with a stream body"
     (let [req       (build-request {:method :post
                                     :url    "http://aurl"
                                     :body   (-> "README.md"
                                                 io/file
-                                                io/input-stream)})
-          mime-type (-> req .body .contentType str)]
-      (is (= "application/octet-stream" mime-type)))))
+                                                io/input-stream)})]
+      (is (= "application/octet-stream"
+             (-> req .body .contentType str)))))
+
+  (testing "build a request with query and header params"
+    (let [req (build-request {:url    "https://aurl"
+                              :query  {:q1 "v1" :q2 "v2"}
+                              :header {:h1 "hv1" :h2 "hv2"}})]
+      (is (= #{"h1" "h2"}
+             (-> req .headers .names)))
+      (is (= #{"q1" "q2"}
+             (-> req .url .queryParameterNames))))))
 
 (deftest fetching-stuff
   (testing "normal response"
