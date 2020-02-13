@@ -190,7 +190,7 @@ Takes an optional key `as`. Defaults to `:data`. Returns an InputStream if passe
 {:op     :NameOfOp
  :params {:param-1 "value1"
           :param-2 true}
- :as?    :stream}
+ :as     :stream}
 ```
 
 ### General guidelines
