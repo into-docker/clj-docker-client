@@ -20,11 +20,18 @@ on: [push]
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: "ubuntu-latest"
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Install dependencies
-      run: lein deps
-    - name: Run tests
-      run: lein kaocha
+    - name: "Checkout code"
+      uses: "actions/checkout@v2"
+
+    - name: "Restore Cache"
+      uses: "actions/cache@v1"
+      with:
+        path: "~/.m2/repository"
+        key: "${{ runner.os }}-lein-${{ hashFiles('project.clj') }}"
+        restore-keys: "${{ runner.os }}-lein-"
+
+    - name: "Run tests"
+      run: "lein kaocha"
