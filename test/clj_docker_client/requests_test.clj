@@ -17,8 +17,7 @@
   (:require [clojure.test :refer :all]
             [clojure.string :as s]
             [clojure.java.io :as io]
-            [clj-docker-client.requests :refer :all]
-            [clj-docker-client.core :as core])
+            [clj-docker-client.requests :refer :all])
   (:import (java.io InputStream)
            (okhttp3 HttpUrl
                     HttpUrl$Builder
@@ -26,6 +25,27 @@
                     Request
                     RequestBody
                     Request$Builder)))
+
+(deftest docker-connection
+  (testing "successful connection to the socket"
+    (is (instance? clj_docker_client.socket.TunnelingUnixSocket
+                   (:socket (connect* {:uri "unix:///var/run/docker.sock"}))))
+    (is (instance? okhttp3.OkHttpClient
+                   (:client (connect* {:uri "unix:///var/run/docker.sock"})))))
+
+  (testing "connection with usupported protocol"
+    (is (thrown? IllegalArgumentException
+                 (connect* {:uri "http://this-does-not-work"}))))
+
+  (testing "connection with set timeouts"
+    (let [{:keys [client]} (connect* {:uri      "unix:///var/run/docker.sock"
+                                      :timeouts {:connect-timeout 10
+                                                 :read-timeout    2000
+                                                 :write-timeout   3000}})]
+      (is (and (= 10 (.connectTimeoutMillis client))
+               (= 2000 (.readTimeoutMillis client))
+               (= 3000 (.writeTimeoutMillis client))
+               (= 0 (.callTimeoutMillis client)))))))
 
 (deftest unix-sockets
   (testing "creating a unix socket client builder"
@@ -119,17 +139,17 @@
 
 (deftest fetching-stuff
   (testing "normal response"
-    (is (= "OK" (fetch {:conn (core/connect {:uri "unix:///var/run/docker.sock"})
+    (is (= "OK" (fetch {:conn (connect* {:uri "unix:///var/run/docker.sock"})
                         :url  "/_ping"}))))
 
   (testing "streaming response"
     (is (instance? InputStream
-                   (fetch {:conn (core/connect {:uri "unix:///var/run/docker.sock"})
+                   (fetch {:conn (connect* {:uri "unix:///var/run/docker.sock"})
                            :url  "/_ping"
                            :as   :stream}))))
 
   (testing "exposing socket"
-    (let [socket (fetch {:conn (core/connect {:uri "unix:///var/run/docker.sock"})
+    (let [socket (fetch {:conn (connect* {:uri "unix:///var/run/docker.sock"})
                          :url  "/_ping"
                          :as   :socket})]
       (is (instance? java.net.Socket socket))

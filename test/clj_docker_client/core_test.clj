@@ -16,27 +16,15 @@
 (ns clj-docker-client.core-test
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io]
-            [clj-docker-client.core :refer :all]))
+            [clj-docker-client.core :refer :all])
+  (:import (clj_docker_client.socket TunnelingUnixSocket)
+           (okhttp3 OkHttpClient)))
 
 (def latest-version "v1.40")
 
-(deftest docker-connection
-  (testing "successful connection to the socket"
-    (is (map? (connect {:uri "unix:///var/run/docker.sock"}))))
-
-  (testing "connection with usupported protocol"
-    (is (thrown? IllegalArgumentException
-                 (connect {:uri "http://this-does-not-work"}))))
-
-  (testing "connection with set timeouts"
-    (let [{:keys [client]} (connect {:uri             "unix:///var/run/docker.sock"
-                                     :connect-timeout 10
-                                     :read-timeout    2000
-                                     :write-timeout   3000})]
-      (is (and (= 10 (.connectTimeoutMillis client))
-               (= 2000 (.readTimeoutMillis client))
-               (= 3000 (.writeTimeoutMillis client))
-               (= 0 (.callTimeoutMillis client)))))))
+(deftest docker-connect-map
+  (testing "deprecated connect returns map"
+    (is (map? (connect {:uri "unix:///var/run/docker.sock"})))))
 
 (deftest fetch-categories
   (testing "listing all available categories in latest version"
