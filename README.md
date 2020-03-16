@@ -75,23 +75,8 @@ This assumes Java 11+:
 
 This library aims to be a _as thin layer as possible_ between you and Docker. This consists of following public functions:
 
-#### connect
-Connect to the docker daemon's [UNIX socket](https://en.wikipedia.org/wiki/Unix_domain_socket) and create a connection.
-```clojure
-(def conn (docker/connect {:uri "unix:///var/run/docker.sock"}))
-```
-Takes optional timeout parameters in **ms**:
-```clojure
-;; All values default to 0, which signifies no timeout.
-(def conn (connect {:uri             "unix:///var/run/docker.sock"
-                    :connect-timeout 10
-                    :read-timeout    2000
-                    :write-timeout   2000
-                    :call-timeout    30000}))
-```
-Thanks [olymk2](https://github.com/olymk2) for the suggestion.
-
 #### categories
+
 Lists the categories of operations supported. Can be bound to an API version.
 ```clojure
 (docker/categories) ; Latest version
@@ -123,14 +108,27 @@ Lists the categories of operations supported. Can be bound to an API version.
 ```
 
 #### client
-Creates a client scoped to the operations of a given category. Can be bound to an API version.
+
+Connect to the docker daemon's [UNIX socket](https://en.wikipedia.org/wiki/Unix_domain_socket) and
+create a client scoped to the operations of a given category. Can be bound to an API version.
 ```clojure
 (def images (docker/client {:category :images
-                            :conn     conn})) ; Latest version
+                            :conn     {:uri "unix:///var/run/docker.sock"}})) ; Latest version
 
 (def containers (docker/client {:category    :containers
-                                :conn        conn
+                                :conn        {:uri "unix:///var/run/docker.sock"}
                                 :api-version "v1.40"})) ; Container client for v1.40
+```
+Using a timeout for the connections. Thanks [olymk2](https://github.com/olymk2) for the suggestion.
+Docker actions can take quite a long time so set the timeout accordingly. When you don't provide timeouts
+then there will be no timeout clientside.
+```
+(def ping (docker/client {:category :_ping
+                          :conn     {:uri      "unix:///var/run/docker.sock"
+                                     :timeouts {:connect-timeout 10
+                                                :read-timeout    30000
+                                                :write-timeout   30000
+                                                :call-timeout    30000}}}))
 ```
 
 #### ops
@@ -201,10 +199,8 @@ Takes an optional key `as`. Defaults to `:data`. Returns an InputStream if passe
 
 #### Pulling an image
 ```clojure
-(def conn (docker/connect {:uri "unix:///var/run/docker.sock"}))
-
 (def images (docker/client {:category :images
-                            :conn   conn}))
+                            :conn     {:uri "unix:///var/run/docker.sock"}}))
 
 (docker/invoke images {:op     :ImageCreate
                        :params {:fromImage "busybox:musl"}})
@@ -213,7 +209,7 @@ Takes an optional key `as`. Defaults to `:data`. Returns an InputStream if passe
 #### Creating a container
 ```clojure
 (def containers (docker/client {:category :containers
-                                :conn     conn}))
+                                :conn     {:uri "unix:///var/run/docker.sock"}}))
 
 (docker/invoke containers {:op     :ContainerCreate
                            :params {:name "conny"
@@ -290,18 +286,18 @@ fetch takes the following params as a map:
 
 ;; This is the undocumented API in the Docker Daemon.
 ;; See https://github.com/moby/moby/pull/22049/files#diff-8038ade87553e3a654366edca850f83dR11
-(req/fetch {:conn (docker/connect {:uri "unix:///var/run/docker.sock"})
+(req/fetch {:conn (req/connect* {:uri "unix:///var/run/docker.sock"})
             :url  "/v1.40/containers/conny/checkpoints"})
 ```
 
 More examples of low level calls:
 ```clojure
 ;; Ping the server
-(req/fetch {:conn (docker/connect {:uri "unix:///var/run/docker.sock"})
+(req/fetch {:conn (req/connect* {:uri "unix:///var/run/docker.sock"})
             :url  "/v1.40/_ping"})
 
 ;; Copy a folder to a container
-(req/fetch {:conn   (docker/connect {:uri "unix:///var/run/docker.sock"})
+(req/fetch {:conn   (req/connect* {:uri "unix:///var/run/docker.sock"})
             :url    "/v1.40/containers/conny/archive"
             :method :put
             :query  {:path "/root/src"}

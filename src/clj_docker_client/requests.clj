@@ -17,6 +17,8 @@
   (:require [clojure.string :as s]
             [jsonista.core :as json])
   (:import (java.io InputStream)
+           (java.time Duration)
+           (java.net URI)
            (java.util.regex Pattern)
            (okhttp3 HttpUrl
                     HttpUrl$Builder
@@ -40,6 +42,40 @@
                                        socket-factory)]
     {:socket  (.getSocket socket-factory)
      :builder builder}))
+
+(defn panic!
+  "Helper for erroring out for wrong args."
+  [^String message]
+  (throw (IllegalArgumentException. message)))
+
+(defn connect*
+  "Connects to the provided :uri in the connection options.
+
+  Optionally takes connect, read, write and call timeout in ms.
+  All are set to 0 by default, which is no timeout.
+
+  Returns the connection.
+
+  The url must be fully qualified with the protocol.
+  eg. unix:///var/run/docker.sock or https://my.docker.host:6375"
+  [{:keys [uri timeouts]}]
+  (when (nil? uri)
+    (panic! ":uri is required"))
+  (let [uri              (URI. uri)
+        scheme           (.getScheme uri)
+        path             (.getPath uri)
+        {:keys [^OkHttpClient$Builder builder
+                socket]} (case scheme
+                           "unix" (unix-socket-client-builder path)
+                           (panic! (format "Protocol '%s' not supported yet." scheme)))
+        timeout-from     #(Duration/ofMillis (or % 0))
+        builder+opts     (-> builder
+                             (.connectTimeout (timeout-from (:connect-timeout timeouts)))
+                             (.readTimeout (timeout-from (:read-timeout timeouts)))
+                             (.writeTimeout (timeout-from (:write-timeout timeouts)))
+                             (.callTimeout (timeout-from (:call-timeout timeouts))))]
+    {:client (.build builder+opts)
+     :socket socket}))
 
 (defn stream->req-body
   "Converts an InputStream to OkHttp RequestBody."
@@ -148,4 +184,7 @@
   (interpolate-path "a/{id}/path/to/{something-else}/and/{xid}/{not-this}"
                     {:id             "a-id"
                      :xid            "b-id"
-                     :something-else "stuff"}))
+                     :something-else "stuff"})
+
+  (fetch {:conn (connect* {:uri "unix:///var/run/docker.sock"})
+              :url  "/v1.40/containers/conny/checkpoints"}))
