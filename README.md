@@ -20,17 +20,17 @@ See [this](https://cljdoc.org/d/lispyclouds/clj-docker-client/0.3.2/doc/readme) 
 ### Installation
 Leiningen/Boot
 ```clojure
-[lispyclouds/clj-docker-client "0.5.1"]
+[lispyclouds/clj-docker-client "0.5.2"]
 ```
 
 Clojure CLI/deps.edn
 ```clojure
-{lispyclouds/clj-docker-client {:mvn/version "0.5.1"}}
+{lispyclouds/clj-docker-client {:mvn/version "0.5.2"}}
 ```
 
 Gradle
 ```groovy
-compile 'lispyclouds:clj-docker-client:0.5.1'
+compile 'lispyclouds:clj-docker-client:0.5.2'
 ```
 
 Maven
@@ -38,7 +38,7 @@ Maven
 <dependency>
   <groupId>lispyclouds</groupId>
   <artifactId>clj-docker-client</artifactId>
-  <version>0.5.1</version>
+  <version>0.5.2</version>
 </dependency>
 ```
 
