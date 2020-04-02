@@ -314,9 +314,6 @@ More examples of low level calls:
 
 And anything else is possible!
 
-### Known issues/caveats:
-- Reusing of UNIX sockets for multiple open connections is currently not supported. See [#20](https://github.com/lispyclouds/clj-docker-client/issues/20). Workaround is to use new connections at the cost of slightly more resource usage.
-
 ## License
 
 Copyright © 2020 Rahul De and [contributors](https://github.com/lispyclouds/clj-docker-client/graphs/contributors).
