@@ -89,7 +89,7 @@
   :as specifying the result. Can be either of :stream, :socket, :data. Defaults to :data.
 
   If a :socket is requested, the underlying UNIX socket is returned."
-  [{:keys [category conn api-version]} {:keys [op params as]}]
+  [{:keys [category conn api-version]} {:keys [op params as throw-exception?]}]
   (when (some nil? [category conn op])
     (req/panic! ":category, :conn are required in client, :op is required in operation map"))
   (let [request-info   (spec/request-info-of category op api-version)
@@ -103,14 +103,16 @@
                             (reduce (partial spec/gather-request-params
                                              params)
                                     {}))
-        response       (req/fetch {:conn   (req/connect* {:uri (:uri conn) :timeouts (:timeouts conn)})
-                                   :url    (:path request-info)
-                                   :method (:method request-info)
-                                   :query  query
-                                   :header header
-                                   :body   (-> body vals first)
-                                   :path   path
-                                   :as     as})
+        response       (req/fetch {:conn             (req/connect* {:uri      (:uri conn)
+                                                                    :timeouts (:timeouts conn)})
+                                   :url              (:path request-info)
+                                   :method           (:method request-info)
+                                   :query            query
+                                   :header           header
+                                   :body             (-> body vals first)
+                                   :path             path
+                                   :as               as
+                                   :throw-exception? throw-exception?})
         try-json-parse #(try
                           (json/read-value %
                                            (json/object-mapper

@@ -160,19 +160,23 @@
 
   If :as is passed as :stream, returns an InputStream.
   If passed as :socket, returns the underlying UNIX socket for direct I/O."
-  [{:keys [conn as] :as args}]
+  [{:keys [conn as throw-exception?] :as args}]
   (let [client   ^OkHttpClient (:client conn)
         request  (build-request (update args
                                         :url
                                         #(format "http://localhost%s" %)))
         response (-> client
                      (.newCall request)
-                     .execute
-                     .body)]
+                     .execute)
+        status   (.code response)
+        body     (.body response)]
+    (when (and throw-exception?
+               (>= status 400))
+      (throw (RuntimeException. (format "Request error: %s" (.string body)))))
     (case as
       :socket (:socket conn)
-      :stream (.byteStream response)
-      (.string response))))
+      :stream (.byteStream body)
+      (.string body))))
 
 (comment
   (unix-socket-client-builder "/var/run/docker.sock")
@@ -187,4 +191,4 @@
                      :something-else "stuff"})
 
   (fetch {:conn (connect* {:uri "unix:///var/run/docker.sock"})
-              :url  "/v1.40/containers/conny/checkpoints"}))
+          :url  "/v1.40/containers/conny/checkpoints"}))

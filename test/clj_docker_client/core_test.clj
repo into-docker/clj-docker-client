@@ -89,6 +89,14 @@
         (is (= "OK"
                (invoke pinger {:op :SystemPing})))))
 
+    (testing "invoke with exception"
+      (let [containers (client {:category :containers
+                                :conn     conn})]
+        (is (thrown? RuntimeException
+                     (invoke containers {:op               :ContainerInspect
+                                         :params           {:id "nein"}
+                                         :throw-exception? true})))))
+
     (testing "invoke an op with non-stream params"
       (let [containers (client {:category :containers
                                 :conn     conn})

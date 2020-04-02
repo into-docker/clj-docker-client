@@ -153,4 +153,10 @@
                          :url  "/_ping"
                          :as   :socket})]
       (is (instance? java.net.Socket socket))
-      (.close socket))))
+      (.close socket)))
+
+  (testing "wrong request throws"
+    (is (thrown? RuntimeException
+                 (fetch {:conn             (connect* {:uri "unix:///var/run/docker.sock"})
+                         :url              "/ping"
+                         :throw-exception? true})))))
