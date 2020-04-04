@@ -87,6 +87,8 @@
   :op specifying the operation to invoke. Required.
   :params specifying the params to be passed to the :op.
   :as specifying the result. Can be either of :stream, :socket, :data. Defaults to :data.
+  :throw-exception? Throws a RuntimeException when a response has a status >= 400. Defaults to false.
+                    Standard connection exceptions may still be thrown regardless.
 
   If a :socket is requested, the underlying UNIX socket is returned."
   [{:keys [category conn api-version]} {:keys [op params as throw-exception?]}]
