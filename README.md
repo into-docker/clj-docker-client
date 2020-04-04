@@ -53,10 +53,6 @@ Maven
 
 Auto generated code docs can be found [here](https://cljdoc.org/d/lispyclouds/clj-docker-client/CURRENT)
 
-This uses Docker's HTTP REST API to run. See the section **API version matrix** in https://docs.docker.com/develop/sdk/ to find the corresponding API version for the Docker daemon you're running.
-
-See the [page](https://docs.docker.com/develop/sdk/) about the docker REST API to learn more about the params to pass.
-
 ### Developing with Cognitect [REBL](http://rebl.cognitect.com/)
 Since this is fully data driven, using REBL is really beneficial as it allows us to _walk_ through the output from Docker, see potential errors and be more productive with instant visual feedback.
 
@@ -66,6 +62,13 @@ This assumes Java 11+:
 - Connect your editor of choice to this REPL or start using the REBL/REPL directly.
 - Evaluate `(rebl/ui)` to fire up the REBL UI.
 - Then repeat after me 3 times: _ALL HAIL THE DATA_! 🙏🏽
+
+### The Docker API
+This uses Docker's HTTP REST API to run. See the API [version matrix](https://docs.docker.com/engine/api/#api-version-matrix) to find the corresponding API version for the Docker daemon you're running.
+
+clj-docker-client works by parsing the Swagger 2.0 YAMLs from the docker client API and vendors it in this [directory](https://github.com/lispyclouds/clj-docker-client/tree/master/resources/api). **This defaults to using the latest version available there if no versions are pinned.** It is recommended to use a pinned version to have consistent behavior across different engine versions.
+
+See the [page](https://docs.docker.com/develop/sdk/) about the docker REST API to learn more about the usage and params to pass.
 
 ### Usage
 
@@ -193,7 +196,7 @@ Takes an optional key `as`. Defaults to `:data`. Returns an InputStream if passe
 
 Takes another optional key `:throw-exception?`. Defaults to `false`. If set to true will throw an exception for exceptional status codes from the Docker API i.e. `status >= 400`. Throws an `java.lang.RuntimeException` with the message.
 ```clojure
-{:op                :NameOfOp
+{:op               :NameOfOp
  :throw-exception? true}
 ```
 
