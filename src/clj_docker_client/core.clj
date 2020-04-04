@@ -130,7 +130,7 @@
 
   (connect {:uri "unix:///var/run/docker.sock"})
 
-  (connect* {:uri "unix:///var/run/docker.sock"})
+  (req/connect* {:uri "unix:///var/run/docker.sock"})
 
   (connect {:uri "https://my.docker.host:6375"})
 
