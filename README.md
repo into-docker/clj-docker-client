@@ -125,7 +125,7 @@ create a client scoped to the operations of a given category. Can be bound to an
 Using a timeout for the connections. Thanks [olymk2](https://github.com/olymk2) for the suggestion.
 Docker actions can take quite a long time so set the timeout accordingly. When you don't provide timeouts
 then there will be no timeout clientside.
-```
+```clojure
 (def ping (docker/client {:category :_ping
                           :conn     {:uri      "unix:///var/run/docker.sock"
                                      :timeouts {:connect-timeout 10
