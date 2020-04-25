@@ -36,16 +36,18 @@
   (let [[param value] (first value-map)]
     (if (nil? param)
       path
-      (recur
-       (s/replace path
-                  (re-pattern (format "\\{([%s].*?)\\}"
-                                      (-> param name Pattern/quote)))
-                  value)
-       (dissoc value-map param)))))
+      (recur (s/replace path
+                        (re-pattern (format "\\{([%s].*?)\\}"
+                                            (-> param
+                                                name
+                                                Pattern/quote)))
+                        value)
+             (dissoc value-map param)))))
 
 (defn- maybe-serialize-body
   "If the body is a map, convert it to JSON and attach the correct headers."
-  [{:keys [body] :as request}]
+  [{:keys [body]
+    :as   request}]
   (if (map? body)
     (-> request
         (assoc-in [:headers "content-type"] "application/json")
@@ -67,18 +69,19 @@
   [{:keys [uri timeouts]}]
   (when (nil? uri)
     (panic! ":uri is required"))
-  (uhttp/client uri {:connect-timeout-ms (:connect-timeout timeouts)
-                     :read-timeout-ms    (:read-timeout timeouts)
-                     :write-timeout-ms   (:write-timeout timeouts)
-                     :call-timeout-ms    (:call-timeout timeouts)
-                     :mode               :recreate}))
+  (uhttp/client uri
+                {:connect-timeout-ms (:connect-timeout timeouts)
+                 :read-timeout-ms    (:read-timeout timeouts)
+                 :write-timeout-ms   (:write-timeout timeouts)
+                 :call-timeout-ms    (:call-timeout timeouts)
+                 :mode               :recreate}))
 
 ;; ## Fetch
 
 (defn- build-request
   "Builds a Request object for unixsocket-http."
   [{:keys [conn method ^String url query header path body as throw-exception?]
-    :or {method :get}}]
+    :or   {method :get}}]
   (-> {:client           conn
        :method           method
        :url              (interpolate-path url path)
@@ -87,7 +90,7 @@
        :body             body
        :as               (or as :string)
        :throw-exceptions throw-exception?}
-      (maybe-serialize-body)))
+      maybe-serialize-body))
 
 (defn fetch
   "Performs the request.
@@ -96,5 +99,5 @@
   If passed as :socket, returns the underlying UNIX socket for direct I/O."
   [request]
   (-> (build-request request)
-      (uhttp/request)
-      (:body)))
+      uhttp/request
+      :body))

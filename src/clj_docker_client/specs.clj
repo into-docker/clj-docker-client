@@ -23,16 +23,14 @@
   "Returns the spec for the Docker API for the supplied version.
 
   Pass nil for the latest spec."
-  ([]
-   (fetch-spec nil))
+  ([] (fetch-spec nil))
   ([version]
    (let [spec-file (if (nil? version)
                      "api/latest.yaml"
                      (format "api/%s.yaml" version))
          resource  (io/resource spec-file)]
      (if (nil? resource)
-       (throw (IllegalArgumentException.
-               (format "Unsupported version: %s" version)))
+       (throw (IllegalArgumentException. (format "Unsupported version: %s" version)))
        (-> resource
            slurp
            (yaml/parse-string :keywords false))))))
@@ -42,10 +40,13 @@
 
   Filters paths starting with the specified category."
   [category version]
-  (let [spec  (fetch-spec version)]
+  (let [spec (fetch-spec version)]
     {:version (get-in spec ["info" "version"])
      :paths   (filter #(s/starts-with? (key %)
-                                       (format "/%s" (-> category name str)))
+                                       (format "/%s"
+                                               (-> category
+                                                   name
+                                                   str)))
                       (get spec "paths"))}))
 
 (defn ->op
@@ -100,9 +101,11 @@
          (map ->endpoint)
          (map #(assoc-in % [:ops] (find-op-meta op (:ops %))))
          (filter #(some? (:ops %)))
-         (map #(hash-map :path (format "/v%s%s" version (:path %))
+         (map #(hash-map :path   (format "/v%s%s"
+                                         version
+                                         (:path %))
                          :method (get-in % [:ops :method])
-                         :doc (get-in % [:ops :doc])
+                         :doc    (get-in % [:ops :doc])
                          :params (get-in % [:ops :params])))
          first)))
 
@@ -114,57 +117,44 @@
   (let [param (keyword name)]
     (if (not (contains? supplied-params param))
       request-params
-      (update-in request-params
-                 [(keyword in)]
-                 assoc
-                 param
-                 (param supplied-params)))))
+      (update-in request-params [(keyword in)] assoc param (param supplied-params)))))
 
 (comment
   (-> (io/resource "api/latest.yaml")
       slurp
       (yaml/parse-string :keywords false)
       (get-in ["info" "version"]))
-
   (->> (get-paths-of-category :images nil)
        :paths
        (take 1)
        (map ->endpoint))
-
   (->> (get-paths-of-category :containers nil)
        :paths
        (map ->endpoint)
        (mapcat :ops)
        (take 1)
        (find-op-meta :ContainerList))
-
   (->> (request-info-of :containers :PutContainerArchive nil)
        :params)
-
   (gather-request-params {:all true}
                          {}
                          {:name "all"
                           :in   "query"})
-
   (gather-request-params {:all true}
                          {}
                          {:name "all"
                           :in   "body"})
-
   (->> (request-info-of :containers :ContainerList nil)
        :params
        (reduce (partial gather-request-params
                         {:all   true
                          :limit 5})
                {}))
-
   (->> (request-info-of :images :ImagePush nil)
        :params
        (reduce (partial gather-request-params
                         {:tag             "tagz"
                          :X-Registry-Auth "reg-auth"})
                {}))
-
   (fetch-spec "v1.40")
-
   (fetch-spec))
