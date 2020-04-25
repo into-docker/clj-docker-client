@@ -16,9 +16,7 @@
 (ns clj-docker-client.core-test
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io]
-            [clj-docker-client.core :refer :all])
-  (:import (clj_docker_client.socket TunnelingUnixSocket)
-           (okhttp3 OkHttpClient)))
+            [clj-docker-client.core :refer :all]))
 
 (def latest-version "v1.40")
 

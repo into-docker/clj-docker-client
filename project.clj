@@ -25,9 +25,6 @@
                  [unixsocket-http "1.0.5"]]
   :plugins [[lein-ancient "0.6.15"]]
   :global-vars {*warn-on-reflection* true}
-  :aot [clj-docker-client.socket.TunnelingUnixSocket
-        clj-docker-client.socket.UnixDomainSocketFactory]
-  :resource-paths ["resources"]
   :profiles {:kaocha {:dependencies [[lambdaisland/kaocha "1.0-612"]]}
              :rebl   {:repl-options   {:nrepl-middleware [nrebl.middleware/wrap-nrebl]}
                       :injections     [(require '[cognitect.rebl :as rebl])]
