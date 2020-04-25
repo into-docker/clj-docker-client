@@ -20,17 +20,17 @@ See [this](https://cljdoc.org/d/lispyclouds/clj-docker-client/0.3.2/doc/readme) 
 ### Installation
 Leiningen/Boot
 ```clojure
-[lispyclouds/clj-docker-client "0.5.3"]
+[lispyclouds/clj-docker-client "1.0.0-RC1"]
 ```
 
 Clojure CLI/deps.edn
 ```clojure
-{lispyclouds/clj-docker-client {:mvn/version "0.5.3"}}
+{lispyclouds/clj-docker-client {:mvn/version "1.0.0-RC1"}}
 ```
 
 Gradle
 ```groovy
-compile 'lispyclouds:clj-docker-client:0.5.3'
+compile 'lispyclouds:clj-docker-client:1.0.0-RC1'
 ```
 
 Maven
@@ -38,7 +38,7 @@ Maven
 <dependency>
   <groupId>lispyclouds</groupId>
   <artifactId>clj-docker-client</artifactId>
-  <version>0.5.3</version>
+  <version>1.0.0-RC1</version>
 </dependency>
 ```
 
@@ -124,7 +124,7 @@ create a client scoped to the operations of a given category. Can be bound to an
 ```
 Using a timeout for the connections. Thanks [olymk2](https://github.com/olymk2) for the suggestion.
 Docker actions can take quite a long time so set the timeout accordingly. When you don't provide timeouts
-then there will be no timeout clientside.
+then there will be no timeout on the client side.
 ```clojure
 (def ping (docker/client {:category :_ping
                           :conn     {:uri      "unix:///var/run/docker.sock"
@@ -133,6 +133,7 @@ then there will be no timeout clientside.
                                                 :write-timeout   30000
                                                 :call-timeout    30000}}}))
 ```
+Alternatively if connecting to a remote docker daemon over TCP supply the `:uri` as `https://your.docker.host:2376`. `unix://` and `http(s)://` are the currently supported protocols.
 
 #### ops
 Lists the supported ops by a client.

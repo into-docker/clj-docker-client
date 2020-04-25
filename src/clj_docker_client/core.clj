@@ -108,7 +108,7 @@
                                                      :as               as
                                                      :throw-exception? throw-exception?})
         try-json-parse                   #(try
-                                            (json/read-value % (json/object-mapper {:decode-key-fn keyword}))
+                                            (json/read-value % (json/object-mapper {:decode-key-fn true}))
                                             (catch Exception _ %))]
     (case as
       (:socket :stream) response
