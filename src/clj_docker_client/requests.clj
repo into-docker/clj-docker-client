@@ -14,98 +14,17 @@
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
 (ns clj-docker-client.requests
-  (:require [clojure.string :as s]
+  (:require [unixsocket-http.core :as uhttp]
+            [clojure.string :as s]
             [jsonista.core :as json])
-  (:import (java.io InputStream)
-           (java.time Duration)
-           (java.net URI)
-           (java.util.regex Pattern)
-           (okhttp3 HttpUrl
-                    HttpUrl$Builder
-                    MediaType
-                    OkHttpClient
-                    OkHttpClient$Builder
-                    Request$Builder
-                    RequestBody)
-           (okhttp3.internal Util)
-           (okio BufferedSink
-                 Okio)
-           (clj_docker_client.socket UnixDomainSocketFactory)))
+  (:import (java.util.regex Pattern)))
 
-(defn unix-socket-client-builder
-  "Constructs a client builder for a UNIX socket.
-
-  Also returns the underlying socket for direct access."
-  [^String path]
-  (let [socket-factory (UnixDomainSocketFactory. path)
-        builder        (.socketFactory (OkHttpClient$Builder.)
-                                       socket-factory)]
-    {:socket  (.getSocket socket-factory)
-     :builder builder}))
+;; ## Helpers
 
 (defn panic!
   "Helper for erroring out for wrong args."
   [^String message]
   (throw (IllegalArgumentException. message)))
-
-(defn connect*
-  "Connects to the provided :uri in the connection options.
-
-  Optionally takes connect, read, write and call timeout in ms.
-  All are set to 0 by default, which is no timeout.
-
-  Returns the connection.
-
-  The url must be fully qualified with the protocol.
-  eg. unix:///var/run/docker.sock or https://my.docker.host:6375"
-  [{:keys [uri timeouts]}]
-  (when (nil? uri)
-    (panic! ":uri is required"))
-  (let [uri              (URI. uri)
-        scheme           (.getScheme uri)
-        path             (.getPath uri)
-        {:keys [^OkHttpClient$Builder builder
-                socket]} (case scheme
-                           "unix" (unix-socket-client-builder path)
-                           (panic! (format "Protocol '%s' not supported yet." scheme)))
-        timeout-from     #(Duration/ofMillis (or % 0))
-        builder+opts     (-> builder
-                             (.connectTimeout (timeout-from (:connect-timeout timeouts)))
-                             (.readTimeout (timeout-from (:read-timeout timeouts)))
-                             (.writeTimeout (timeout-from (:write-timeout timeouts)))
-                             (.callTimeout (timeout-from (:call-timeout timeouts))))]
-    {:client (.build builder+opts)
-     :socket socket}))
-
-(defn stream->req-body
-  "Converts an InputStream to OkHttp RequestBody."
-  [^InputStream stream]
-  (proxy [RequestBody] []
-    (contentType []
-      (MediaType/get "application/octet-stream"))
-    (contentLength []
-      (.available stream))
-    (writeTo [^BufferedSink sink]
-      (let [source (Okio/source stream)]
-        (try (.writeAll sink source)
-             (finally (Util/closeQuietly source)))))))
-
-(defn add-params
-  "Helper fn for adding parameters to OkHttp Builders."
-  [builder params location]
-  (loop [obj  builder
-         args params]
-    (if (empty? args)
-      obj
-      (let [[param value] (first args)
-            request       (case location
-                            :header (.addHeader ^Request$Builder obj
-                                                (name param)
-                                                (str value))
-                            :query  (.addQueryParameter ^HttpUrl$Builder obj
-                                                        (name param)
-                                                        (str value)))]
-        (recur request (dissoc args param))))))
 
 (defn interpolate-path
   "Replaces all occurrences of {k1}, {k2} ... with the value map provided.
@@ -124,71 +43,58 @@
                   value)
        (dissoc value-map param)))))
 
-(defn build-request
-  "Builds a Request object for OkHttp."
-  [{:keys [method ^String url query header path body]}]
-  (let [formatted-url (interpolate-path url path)
-        url-builder   (add-params (.newBuilder (HttpUrl/parse formatted-url))
-                                  query
-                                  :query)
-        req-builder   (-> (Request$Builder.)
-                          (.url (.build ^HttpUrl$Builder url-builder))
-                          (add-params header :header))
-        req-body      (cond
-                        (nil? body)
-                        (RequestBody/create nil "")
+(defn- maybe-serialize-body
+  "If the body is a map, convert it to JSON and attach the correct headers."
+  [{:keys [body] :as request}]
+  (if (map? body)
+    (-> request
+        (assoc-in [:headers "content-type"] "application/json")
+        (update :body json/write-value-as-string))
+    request))
 
-                        (map? body)
-                        (RequestBody/create (json/write-value-as-string body)
-                                            (MediaType/get "application/json; charset=utf-8"))
+;; ## Connect
 
-                        (instance? InputStream body)
-                        (stream->req-body body))
-        req           (case method
-                        :post      (.post ^Request$Builder req-builder req-body)
-                        :put       (.put ^Request$Builder req-builder req-body)
-                        :head      (.head ^Request$Builder req-builder)
-                        :delete    (.delete ^Request$Builder req-builder)
-                        (nil :get) req-builder
-                        (throw (IllegalArgumentException.
-                                (format "Unsupported request method: '%s'."
-                                        (name method)))))]
-    (.build ^Request$Builder req)))
+(defn connect*
+  "Connects to the provided :uri in the connection options.
+
+  Optionally takes connect, read, write and call timeout in ms.
+  All are set to 0 by default, which is no timeout.
+
+  Returns the connection.
+
+  The url must be fully qualified with the protocol.
+  eg. unix:///var/run/docker.sock or https://my.docker.host:6375"
+  [{:keys [uri timeouts]}]
+  (when (nil? uri)
+    (panic! ":uri is required"))
+  (uhttp/client uri {:connect-timeout-ms (:connect-timeout timeouts)
+                     :read-timeout-ms    (:read-timeout timeouts)
+                     :write-timeout-ms   (:write-timeout timeouts)
+                     :call-timeout-ms    (:call-timeout timeouts)
+                     :mode               :recreate}))
+
+;; ## Fetch
+
+(defn- build-request
+  "Builds a Request object for unixsocket-http."
+  [{:keys [conn method ^String url query header path body as throw-exception?]
+    :or {method :get}}]
+  (-> {:client           conn
+       :method           method
+       :url              (interpolate-path url path)
+       :headers          header
+       :query-params     query
+       :body             body
+       :as               (or as :string)
+       :throw-exceptions throw-exception?}
+      (maybe-serialize-body)))
 
 (defn fetch
   "Performs the request.
 
   If :as is passed as :stream, returns an InputStream.
   If passed as :socket, returns the underlying UNIX socket for direct I/O."
-  [{:keys [conn as throw-exception?] :as args}]
-  (let [client   ^OkHttpClient (:client conn)
-        request  (build-request (update args
-                                        :url
-                                        #(format "http://localhost%s" %)))
-        response (-> client
-                     (.newCall request)
-                     .execute)
-        status   (.code response)
-        body     (.body response)]
-    (when (and throw-exception?
-               (>= status 400))
-      (throw (RuntimeException. (format "Request error: %s" (.string body)))))
-    (case as
-      :socket (:socket conn)
-      :stream (.byteStream body)
-      (.string body))))
-
-(comment
-  (unix-socket-client-builder "/var/run/docker.sock")
-
-  (stream->req-body (java.io.FileInputStream. (java.io.File. "README.md")))
-
-  (Pattern/quote "\\{([a-id].*?)\\}")
-
-  (interpolate-path "a/{id}/path/to/{something-else}/and/{xid}/{not-this}"
-                    {:id             "a-id"
-                     :xid            "b-id"
-                     :something-else "stuff"})
-
-  (fetch {:conn (connect* {:uri "unix:///var/run/docker.sock"})
-          :url  "/v1.40/containers/conny/checkpoints"}))
+  [request]
+  (-> (build-request request)
+      (uhttp/request)
+      (:body)))
