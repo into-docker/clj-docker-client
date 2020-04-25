@@ -22,8 +22,7 @@
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [clj-commons/clj-yaml "0.7.1"]
                  [metosin/jsonista "0.2.5"]
-                 [com.squareup.okhttp3/okhttp "4.5.0"]
-                 [com.github.jnr/jnr-unixsocket "0.30"]]
+                 [unixsocket-http "1.0.5"]]
   :plugins [[lein-ancient "0.6.15"]]
   :global-vars {*warn-on-reflection* true}
   :aot [clj-docker-client.socket.TunnelingUnixSocket
