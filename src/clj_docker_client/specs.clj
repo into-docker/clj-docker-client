@@ -26,8 +26,8 @@
   ([] (fetch-spec nil))
   ([version]
    (let [spec-file (if (nil? version)
-                     "api/latest.yaml"
-                     (format "api/%s.yaml" version))
+                     "clj_docker_client/api/latest.yaml"
+                     (format "clj_docker_client/api/%s.yaml" version))
          resource  (io/resource spec-file)]
      (if (nil? resource)
        (throw (IllegalArgumentException. (format "Unsupported version: %s" version)))
@@ -120,7 +120,7 @@
       (update-in request-params [(keyword in)] assoc param (param supplied-params)))))
 
 (comment
-  (-> (io/resource "api/latest.yaml")
+  (-> (io/resource "clj_docker_client/api/latest.yaml")
       slurp
       (yaml/parse-string :keywords false)
       (get-in ["info" "version"]))
