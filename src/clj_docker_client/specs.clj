@@ -25,10 +25,9 @@
   Pass nil for the latest spec."
   ([] (fetch-spec nil))
   ([version]
-   (let [spec-file (if (nil? version)
-                     "clj_docker_client/api/latest.yaml"
-                     (format "clj_docker_client/api/%s.yaml" version))
-         resource  (io/resource spec-file)]
+   (let [resource-path "clj_docker_client/api/%s.yaml"
+         spec-file     (format resource-path (or version "latest"))
+         resource      (io/resource spec-file)]
      (if (nil? resource)
        (throw (IllegalArgumentException. (format "Unsupported version: %s" version)))
        (-> resource
