@@ -1,0 +1,6 @@
+{
+  "resources": [
+    { "pattern": "clj_docker_client/api/.+\\.yaml" }
+  ],
+  "bundles": []
+}
