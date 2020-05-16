@@ -72,11 +72,9 @@
   "{path {req-method1 {meta-data..}}
           req-method2 {meta-data..}
           ...} -> {:path path :ops [output-of->op]}"
-  [definition]
-  (let [path (key definition)
-        ops  (map ->op (val definition))]
-    {:path path
-     :ops  ops}))
+  [[path op-defs]]
+  {:path path
+   :ops  (map ->op op-defs)})
 
 (defn find-op-meta
   "Finds the matching operation by operationId in list of ops from the spec.
