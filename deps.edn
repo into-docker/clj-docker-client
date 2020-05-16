@@ -15,6 +15,6 @@
 
 {:deps  {org.clojure/clojure  {:mvn/version "1.10.1"}
          clj-commons/clj-yaml {:mvn/version "0.7.1"}
-         metosin/jsonista     {:mvn/version "0.2.5"}
+         metosin/jsonista     {:mvn/version "0.2.6"}
          unixsocket-http      {:mvn/version "1.0.5"}}
  :paths ["src" "resources"]}
