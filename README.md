@@ -66,7 +66,7 @@ This assumes Java 11+:
 ### The Docker API
 This uses Docker's HTTP REST API to run. See the API [version matrix](https://docs.docker.com/engine/api/#api-version-matrix) to find the corresponding API version for the Docker daemon you're running.
 
-clj-docker-client works by parsing the Swagger 2.0 YAMLs from the docker client API and vendors it in this [directory](https://github.com/lispyclouds/clj-docker-client/tree/master/resources/api). **This defaults to using the latest version available there if no versions are pinned.** It is recommended to use a pinned version to have consistent behavior across different engine versions.
+clj-docker-client works by parsing the Swagger 2.0 YAMLs from the docker client API and vendors it in this [directory](https://github.com/into-docker/clj-docker-client/tree/master/resources/clj_docker_client/api). **This defaults to using the latest version available there if no versions are pinned.** It is recommended to use a pinned version to have consistent behavior across different engine versions.
 
 See the [page](https://docs.docker.com/develop/sdk/) about the docker REST API to learn more about the usage and params to pass.
 
