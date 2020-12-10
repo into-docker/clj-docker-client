@@ -132,7 +132,7 @@ then there will be no timeout on the client side.
                                                 :write-timeout   30000
                                                 :call-timeout    30000}}}))
 ```
-Alternatively if connecting to a remote docker daemon over TCP supply the `:uri` as `https://your.docker.host:2376`. `unix://` and `http(s)://` are the currently supported protocols.
+Alternatively if connecting to a remote docker daemon over TCP supply the `:uri` as `http://your.docker.host:2376`. **NOTE**: `unix://`, `http://` and `tcp://` are the currently supported protocols.
 
 #### ops
 Lists the supported ops by a client.
