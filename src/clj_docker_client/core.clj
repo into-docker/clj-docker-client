@@ -116,21 +116,18 @@
 
 (comment
   (require '[clojure.java.io :as io])
-  (-> (URI. "unix:///var/run/docker.sock")
-      .getPath)
-  (connect {:uri "unix:///var/run/docker.sock"})
+  (.getPath (java.net.URI. "unix:///var/run/docker.sock"))
   (req/connect* {:uri "unix:///var/run/docker.sock"})
-  (connect {:uri "https://my.docker.host:6375"})
-  (req/fetch {:conn (connect {:uri "unix:///var/run/docker.sock"})
-              :url  "/v1.30/_ping"})
-  (req/fetch {:conn   (connect {:uri "unix:///var/run/docker.sock"})
+  (req/fetch {:conn (req/connect* {:uri "unix:///var/run/docker.sock"})
+              :url  "/v1.41/_ping"})
+  (req/fetch {:conn   (req/connect* {:uri "unix:///var/run/docker.sock"})
               :url    "/containers/create"
               :method :post
               :query  {:name "conny"}
               :body   {:Image "busybox:musl"
                        :Cmd   "ls"}
               :header {:X-Header "header"}})
-  (req/fetch {:conn   (connect {:uri "unix:///var/run/docker.sock"})
+  (req/fetch {:conn   (req/connect* {:uri "unix:///var/run/docker.sock"})
               :url    "/containers/cp-this/archive"
               :method :put
               :query  {:path "/root/src"}
@@ -138,22 +135,16 @@
                           io/file
                           io/input-stream)})
   ;; PLANNED API
-  (def conn
-    (connect {:uri             "unix:///var/run/docker.sock"
-              :connect-timeout 0
-              :read-timeout    0
-              :write-timeout   0
-              :call-timeout    0}))
   (def ping
     (client {:category :_ping
-             :conn     conn}))
+             :conn     {:uri "unix:///var/run/docker.sock"}}))
   (invoke ping {:op :SystemPing})
   (categories)
-  (categories "v1.40")
+  (categories "v1.41")
   (def containers
     (client {:category    :containers
-             :conn        conn
-             :api-version "v1.40"}))
+             :conn        {:uri "unix:///var/run/docker.sock"}
+             :api-version "v1.41"}))
   (def images
     (client {:category :images
              :conn     {:uri "unix:///var/run/docker.sock"}}))
@@ -191,7 +182,7 @@
   (invoke images {:op :ImageList})
   (def pinger
     (client {:category    :_ping
-             :conn        conn
+             :conn        {:uri "unix:///var/run/docker.sock"}
              :api-version "v1.25"}))
   (invoke pinger {:op :SystemPing})
   (invoke containers

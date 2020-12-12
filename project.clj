@@ -13,29 +13,29 @@
 ;   You should have received a copy of the GNU Lesser General Public License
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
-(defproject lispyclouds/clj-docker-client "1.0.1"
+(defproject lispyclouds/clj-docker-client "1.0.2"
   :author "Rahul De <rahul@mailbox.org>"
-  :url "https://github.com/lispyclouds/clj-docker-client"
+  :url "https://github.com/into-docker/clj-docker-client"
   :description "An idiomatic data-driven clojure client for Docker."
   :license {:name "LGPL 3.0"
             :url  "https://www.gnu.org/licenses/lgpl-3.0.en.html"}
   :dependencies [[org.clojure/clojure "1.10.1"]
-                 [clj-commons/clj-yaml "0.7.1"]
-                 [metosin/jsonista "0.2.6"]
+                 [clj-commons/clj-yaml "0.7.2"]
+                 [metosin/jsonista "0.2.7"]
                  [unixsocket-http "1.0.5"]]
   :plugins [[lein-ancient "0.6.15"]]
   :global-vars {*warn-on-reflection* true}
-  :profiles {:kaocha {:dependencies [[lambdaisland/kaocha "1.0.632"]]}
+  :profiles {:kaocha {:dependencies [[lambdaisland/kaocha "1.0.732"]]}
              :rebl   {:repl-options   {:nrepl-middleware [nrebl.middleware/wrap-nrebl]}
                       :injections     [(require '[cognitect.rebl :as rebl])]
                       :dependencies   [[rickmoynihan/nrebl.middleware "0.3.1"]
-                                       [org.clojure/core.async "1.2.603"]
-                                       [lein-cljfmt "0.6.7"]
-                                       [org.openjfx/javafx-fxml "14.0.1"]
-                                       [org.openjfx/javafx-controls "14.0.1"]
-                                       [org.openjfx/javafx-media "14.0.1"]
-                                       [org.openjfx/javafx-swing "14.0.1"]
-                                       [org.openjfx/javafx-base "14.0.1"]
-                                       [org.openjfx/javafx-web "14.0.1"]]
+                                       [org.clojure/core.async "1.3.610"]
+                                       [lein-cljfmt "0.7.0"]
+                                       [org.openjfx/javafx-fxml "15.0.1"]
+                                       [org.openjfx/javafx-controls "15.0.1"]
+                                       [org.openjfx/javafx-media "15.0.1"]
+                                       [org.openjfx/javafx-swing "15.0.1"]
+                                       [org.openjfx/javafx-base "15.0.1"]
+                                       [org.openjfx/javafx-web "15.0.1"]]
                       :resource-paths [~(System/getenv "REBL_PATH")]}}
-  :aliases {"kaocha" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner" "--reporter" "kaocha.report.progress/report"]})
+  :aliases {"kaocha" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner" "--fail-fast" "--reporter" "kaocha.report.progress/report"]})

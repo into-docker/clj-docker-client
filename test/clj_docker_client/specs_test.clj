@@ -18,14 +18,14 @@
             [clojure.string :as s]
             [clj-docker-client.specs :refer :all]))
 
-(def latest-version "v1.40")
+(def test-version "v1.40")
 
 (deftest loading-specs
   (testing "latest spec can be loaded"
     (is (map? (fetch-spec))))
 
   (testing "versioned spec can be loaded"
-    (is (map? (fetch-spec latest-version))))
+    (is (map? (fetch-spec test-version))))
 
   (testing "bad versioned spec"
     (is (thrown? IllegalArgumentException (fetch-spec "crap")))))
@@ -39,38 +39,40 @@
 
   (testing "paths of containers in versioned spec"
     (is (every? #(s/starts-with? % "/containers")
-                (->> (get-paths-of-category :containers latest-version)
+                (->> (get-paths-of-category :containers test-version)
                      :paths
                      (map first))))))
 
 (deftest extractions
-  (let [desc {"get" {"summary"     "a-summary"
-                     "operationId" "an-operationId"
-                     "description" "a-description"
-                     "parameters"  [{"name" "a-name"
-                                     "in"   "a-position"}]}}
+  (let [desc       {"get" {"summary"     "a-summary"
+                           "operationId" "an-operationId"
+                           "description" "a-description"
+                           "parameters"  [{"name" "a-name"
+                                           "in"   "a-position"}]}}
         definition {"/a/path" desc}]
     (testing "extracting operation from a description"
       (is (= {:method :get
               :op     :an-operationId
               :doc    "a-summary\na-description"
-              :params [{:name "a-name" :in "a-position"}]}
+              :params [{:name "a-name"
+                        :in   "a-position"}]}
              (->op (first desc)))))
 
     (testing "making an endpoint def out of a schema def"
       (is (= {:path "/a/path"
-              :ops [{:method :get
-                     :op     :an-operationId
-                     :doc    "a-summary\na-description"
-                     :params [{:name "a-name" :in "a-position"}]}]}
+              :ops  [{:method :get
+                      :op     :an-operationId
+                      :doc    "a-summary\na-description"
+                      :params [{:name "a-name"
+                                :in   "a-position"}]}]}
              (->endpoint (first definition)))))))
 
 (deftest creating-request-info-map
   (testing "create a request map of an op in a category of latest version"
-    (let [info (request-info-of :images :ImageList nil)]
+    (let [info (request-info-of :images :ImageList test-version)]
       (is (= #{:path :method :doc :params} (into #{} (keys info))))
       (is (s/starts-with? (:path info)
-                          (str "/" latest-version)))))
+                          (str "/" test-version)))))
 
   (testing "create a request map of an op in a category of specified version"
     (is (s/starts-with? (:path (request-info-of :images :ImageList "v1.30"))

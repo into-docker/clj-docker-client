@@ -18,7 +18,7 @@
             [clojure.java.io :as io]
             [clj-docker-client.core :refer :all]))
 
-(def latest-version "v1.40")
+(def test-version "v1.40")
 
 (deftest docker-connect-map
   (testing "deprecated connect returns map"
@@ -29,7 +29,7 @@
     (is (coll? (categories))))
 
   (testing "listing all available categories in fixed version"
-    (is (coll? (categories latest-version)))))
+    (is (coll? (categories test-version)))))
 
 (deftest client-construction
   (testing "making a container client of the latest version"
@@ -39,92 +39,108 @@
   (testing "making a container client of a specific version"
     (is (map? (client {:category    :containers
                        :conn        (connect {:uri "unix:///var/run/docker.sock"})
-                       :api-version latest-version})))))
+                       :api-version test-version})))))
 
 (deftest fetching-ops
   (testing "fetching ops for the latest container client"
-    (let [client (client {:category :containers
-                          :conn     (connect {:uri "unix:///var/run/docker.sock"})})
+    (let [client (client {:category    :containers
+                          :api-version test-version
+                          :conn        (connect {:uri "unix:///var/run/docker.sock"})})
           result (ops client)]
       (is (every? keyword? result)))))
 
 (deftest fetching-docs
   (testing "fetching docs for the latest ContainerList op"
-    (let [client (client {:category :containers
-                          :conn (connect {:uri "unix:///var/run/docker.sock"})})
+    (let [client (client {:category    :containers
+                          :api-version test-version
+                          :conn        (connect {:uri "unix:///var/run/docker.sock"})})
           result (doc client :ContainerList)]
       (is (and (contains? result :doc)
                (contains? result :params))))))
 
 (defn pull-image
   [name]
-  (let [images (client {:category :images
-                        :conn     (connect {:uri "unix:///var/run/docker.sock"})})]
-    (invoke images {:op     :ImageCreate
-                    :params {:fromImage name}})))
+  (let [images (client {:category    :images
+                        :api-version test-version
+                        :conn        (connect {:uri "unix:///var/run/docker.sock"})})]
+    (invoke images
+            {:op     :ImageCreate
+             :params {:fromImage name}})))
 
 (defn delete-image
   [name]
-  (let [images (client {:category :images
-                        :conn     (connect {:uri "unix:///var/run/docker.sock"})})]
-    (invoke images {:op     :ImageDelete
-                    :params {:name  name
-                             :force true}})))
+  (let [images (client {:category    :images
+                        :api-version test-version
+                        :conn        (connect {:uri "unix:///var/run/docker.sock"})})]
+    (invoke images
+            {:op     :ImageDelete
+             :params {:name  name
+                      :force true}})))
 
 (defn delete-container
   [id]
-  (let [containers (client {:category :containers
-                            :conn     (connect {:uri "unix:///var/run/docker.sock"})})]
-    (invoke containers {:op     :ContainerDelete
-                        :params {:id    id
-                                 :force true}})))
+  (let [containers (client {:category    :containers
+                            :api-version test-version
+                            :conn        (connect {:uri "unix:///var/run/docker.sock"})})]
+    (invoke containers
+            {:op     :ContainerDelete
+             :params {:id    id
+                      :force true}})))
 
 (deftest invoke-ops
   (let [conn (connect {:uri "unix:///var/run/docker.sock"})]
     (testing "invoke an op with no params"
-      (let [pinger (client {:category :_ping
-                            :conn     conn})]
+      (let [pinger (client {:category    :_ping
+                            :api-version test-version
+                            :conn        conn})]
         (is (= "OK"
                (invoke pinger {:op :SystemPing})))))
 
     (testing "invoke with exception"
       (let [containers (client {:category :containers
+                                :api-version test-version
                                 :conn     conn})]
         (is (thrown? RuntimeException
-                     (invoke containers {:op               :ContainerInspect
-                                         :params           {:id "nein"}
-                                         :throw-exception? true})))))
+                     (invoke containers
+                             {:op               :ContainerInspect
+                              :params           {:id "nein"}
+                              :throw-exception? true})))))
 
     (testing "invoke an op with non-stream params"
       (let [containers (client {:category :containers
+                                :api-version test-version
                                 :conn     conn})
             image      "busybox:musl"
             cname      "conny"]
         (pull-image image)
-        (is (contains? (invoke containers {:op     :ContainerCreate
-                                           :params {:name cname
-                                                    :body {:Image image
-                                                           :Cmd   "ls"}}})
+        (is (contains? (invoke containers
+                               {:op     :ContainerCreate
+                                :params {:name cname
+                                         :body {:Image image
+                                                :Cmd   "ls"}}})
                        :Id))
         (delete-container cname)
         (delete-image image)))
 
     (testing "invoke an op with stream params"
       (let [containers (client {:category :containers
+                                :api-version test-version
                                 :conn     conn})
             image      "busybox:musl"
             cname      "conny"]
         (pull-image image)
-        (invoke containers {:op     :ContainerCreate
-                            :params {:name cname
-                                     :body {:Image image
-                                            :Cmd   "ls"}}})
+        (invoke containers
+                {:op     :ContainerCreate
+                 :params {:name cname
+                          :body {:Image image
+                                 :Cmd   "ls"}}})
         (is (= ""
-               (invoke containers {:op     :PutContainerArchive
-                                   :params {:id          cname
-                                            :path        "/root"
-                                            :inputStream (-> "test/clj_docker_client/test.tar.gz"
-                                                             io/file
-                                                             io/input-stream)}})))
+               (invoke containers
+                       {:op     :PutContainerArchive
+                        :params {:id          cname
+                                 :path        "/root"
+                                 :inputStream (-> "test/clj_docker_client/test.tar.gz"
+                                                  io/file
+                                                  io/input-stream)}})))
         (delete-container cname)
         (delete-image image)))))
