@@ -271,6 +271,38 @@ Takes another optional key `:throw-exception?`. Defaults to `false`. If set to t
 (.close sock) ; Important for freeing up resources.
 ```
 
+#### Using registries that need authentication
+Thanks [@AustinC](https://github.com/AustinC) for this example.
+
+```clojure
+(ns dclj.core
+  (:require [clj-docker-client.core :as d]
+            [cheshire.core :as json])
+  (:import java.util.Base64))
+
+(defn b64-encode
+  [to-encode]
+  (.encodeToString (Base64/getEncoder) (.getBytes to-encode)))
+
+(def auth
+  (-> {"username"      "un"
+       "password"      "pw"
+       "serveraddress" "docker.acme.com"}
+      json/encode
+      b64-encode))
+
+(def images
+  (d/client {:category    :images
+             :conn        {:uri "unix:///var/run/docker.sock"}
+             :api-version "v1.40"}))
+
+(d/invoke images
+          {:op               :ImageCreate
+           :params           {:fromImage       "docker.acme.com/eg:2.1.995"
+                              :X-Registry-Auth auth}
+           :throw-exception? true})
+```
+
 ### Not so common scenarios
 
 #### Accessing undocumented/experimental Docker APIs
