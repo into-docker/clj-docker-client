@@ -13,8 +13,7 @@
 ;   You should have received a copy of the GNU Lesser General Public License
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
-{:deps  {org.clojure/clojure  {:mvn/version "1.10.1"}
-         clj-commons/clj-yaml {:mvn/version "0.7.1"}
-         metosin/jsonista     {:mvn/version "0.2.6"}
-         unixsocket-http      {:mvn/version "1.0.5"}}
+{:deps  {clj-commons/clj-yaml {:mvn/version "0.7.106"}
+         metosin/jsonista     {:mvn/version "0.3.1"}
+         unixsocket-http      {:mvn/version "1.0.6"}}
  :paths ["src" "resources"]}

@@ -17,7 +17,7 @@
   (:require [unixsocket-http.core :as uhttp]
             [clojure.string :as s]
             [jsonista.core :as json])
-  (:import (java.util.regex Pattern)))
+  (:import [java.util.regex Pattern]))
 
 ;; ## Helpers
 
@@ -66,11 +66,14 @@
 
   The url must be fully qualified with the protocol.
   eg. unix:///var/run/docker.sock or https://my.docker.host:6375"
-  [{:keys [uri timeouts]}]
+  [{:keys [uri timeouts builder-fn]}]
   (when (nil? uri)
     (panic! ":uri is required"))
   (uhttp/client uri
-                {:connect-timeout-ms (:connect-timeout timeouts)
+                {:builder-fn         (if builder-fn
+                                       builder-fn
+                                       identity)
+                 :connect-timeout-ms (:connect-timeout timeouts)
                  :read-timeout-ms    (:read-timeout timeouts)
                  :write-timeout-ms   (:write-timeout timeouts)
                  :call-timeout-ms    (:call-timeout timeouts)

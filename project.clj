@@ -19,10 +19,10 @@
   :description "An idiomatic data-driven clojure client for Docker."
   :license {:name "LGPL 3.0"
             :url  "https://www.gnu.org/licenses/lgpl-3.0.en.html"}
-  :dependencies [[org.clojure/clojure "1.10.1"]
-                 [clj-commons/clj-yaml "0.7.2"]
-                 [metosin/jsonista "0.2.7"]
-                 [unixsocket-http "1.0.5"]]
+  :dependencies [[clj-commons/clj-yaml "0.7.106"]
+                 [metosin/jsonista "0.3.1"]
+                 [unixsocket-http "1.0.6"]
+                 [com.squareup.okhttp3/okhttp-tls "4.9.0"]]
   :plugins [[lein-ancient "0.6.15"]]
   :global-vars {*warn-on-reflection* true}
   :profiles {:kaocha {:dependencies [[lambdaisland/kaocha "1.0.732"]]}

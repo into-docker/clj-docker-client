@@ -15,20 +15,59 @@
 
 (ns clj-docker-client.core
   (:require [clojure.string :as s]
+            [clojure.java.io :as io]
             [jsonista.core :as json]
             [clj-docker-client.requests :as req]
-            [clj-docker-client.specs :as spec]))
+            [clj-docker-client.specs :as spec])
+  (:import [okhttp3 OkHttpClient$Builder]
+           [java.security KeyStore]
+           [javax.net.ssl KeyManagerFactory TrustManagerFactory SSLContext]
+           [java.security.cert CertificateFactory X509Certificate]))
+
+(defn make-builder-fn
+  [{:keys [ca key password]}]
+  (fn [^OkHttpClient$Builder builder]
+    (let [password            (.toCharArray ^String password)
+          key-store           (KeyStore/getInstance "PKCS12")
+          stream              (-> key
+                                  io/file
+                                  io/input-stream)
+          key-store           (doto key-store
+                                (.load stream password))
+          key-manager-factory (doto (KeyManagerFactory/getInstance (KeyManagerFactory/getDefaultAlgorithm))
+                                (.init key-store password))
+          stream              (-> ca
+                                  io/file
+                                  io/input-stream)
+          cert-factory        (CertificateFactory/getInstance "X.509")
+          ca-pub-key          (.generateCertificate cert-factory stream)
+          trusted-store       (doto (KeyStore/getInstance (KeyStore/getDefaultType))
+                                (.load nil)
+                                (.setCertificateEntry (.getName (.getSubjectX500Principal ^X509Certificate ca-pub-key)) ca-pub-key))
+          tmf                 (doto (TrustManagerFactory/getInstance (TrustManagerFactory/getDefaultAlgorithm))
+                                (.init trusted-store))
+          trust-managers      (.getTrustManagers tmf)
+          ssl-context         (doto (SSLContext/getInstance "TLS")
+                                (.init (.getKeyManagers key-manager-factory)
+                                       trust-managers
+                                       nil))]
+      (.sslSocketFactory builder
+                         (.getSocketFactory ssl-context)
+                         (aget trust-managers 0)))))
 
 (defn ^:deprecated connect
   "Deprecated but still there for compatibility reasons."
-  [{:keys [uri connect-timeout read-timeout write-timeout call-timeout]}]
+  [{:keys [uri connect-timeout read-timeout write-timeout call-timeout mtls]}]
   (when (nil? uri)
     (req/panic! ":uri is required"))
-  {:uri      uri
-   :timeouts {:connect-timeout connect-timeout
-              :read-timeout    read-timeout
-              :write-timeout   write-timeout
-              :call-timeout    call-timeout}})
+  {:uri        uri
+   :builder-fn (if mtls
+                 (make-builder-fn mtls)
+                 identity)
+   :timeouts   {:connect-timeout connect-timeout
+                :read-timeout    read-timeout
+                :write-timeout   write-timeout
+                :call-timeout    call-timeout}})
 
 (defn categories
   "Returns the available categories.
@@ -51,7 +90,12 @@
     :as   args}]
   (when (some nil? [category conn])
     (req/panic! ":category, :conn are required"))
-  (assoc args :paths (:paths (spec/get-paths-of-category category api-version))))
+  (let [args (if-let [mtls (:mtls conn)]
+               (-> args
+                   (update-in [:conn] assoc :builder-fn (make-builder-fn mtls))
+                   (update-in [:conn] dissoc :mtls))
+               args)]
+    (assoc args :paths (:paths (spec/get-paths-of-category category api-version)))))
 
 (defn ops
   "Returns the supported ops for a client."
@@ -95,8 +139,7 @@
         {:keys [body query header path]} (->> request-info
                                               :params
                                               (reduce (partial spec/gather-request-params params) {}))
-        response                         (req/fetch {:conn             (req/connect* {:uri      (:uri conn)
-                                                                                      :timeouts (:timeouts conn)})
+        response                         (req/fetch {:conn             (req/connect* conn)
                                                      :url              (:path request-info)
                                                      :method           (:method request-info)
                                                      :query            query
@@ -135,6 +178,14 @@
                           io/file
                           io/input-stream)})
   ;; PLANNED API
+  (def http-tls-ping
+    (client {:category :_ping
+             :conn     {:uri  "https://localhost:8000"
+                        :mtls {:ca       "ca.pem"
+                               :key      "mtls.p12"
+                               :password ""}}}))
+  (invoke http-tls-ping {:op :SystemPing})
+
   (def ping
     (client {:category :_ping
              :conn     {:uri "unix:///var/run/docker.sock"}}))
