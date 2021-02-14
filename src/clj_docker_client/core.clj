@@ -26,31 +26,31 @@
 
 (defn make-builder-fn
   [{:keys [ca key password]}]
-  (fn [^OkHttpClient$Builder builder]
-    (let [password            (.toCharArray ^String password)
-          key-store           (KeyStore/getInstance "PKCS12")
-          stream              (-> key
-                                  io/file
-                                  io/input-stream)
-          key-store           (doto key-store
-                                (.load stream password))
-          key-manager-factory (doto (KeyManagerFactory/getInstance (KeyManagerFactory/getDefaultAlgorithm))
-                                (.init key-store password))
-          stream              (-> ca
-                                  io/file
-                                  io/input-stream)
-          cert-factory        (CertificateFactory/getInstance "X.509")
-          ca-pub-key          (.generateCertificate cert-factory stream)
-          trusted-store       (doto (KeyStore/getInstance (KeyStore/getDefaultType))
-                                (.load nil)
-                                (.setCertificateEntry (.getName (.getSubjectX500Principal ^X509Certificate ca-pub-key)) ca-pub-key))
-          tmf                 (doto (TrustManagerFactory/getInstance (TrustManagerFactory/getDefaultAlgorithm))
-                                (.init trusted-store))
-          trust-managers      (.getTrustManagers tmf)
-          ssl-context         (doto (SSLContext/getInstance "TLS")
-                                (.init (.getKeyManagers key-manager-factory)
-                                       trust-managers
-                                       nil))]
+  (let [password       (.toCharArray ^String password)
+        key-store      (KeyStore/getInstance "PKCS12")
+        stream         (-> key
+                           io/file
+                           io/input-stream)
+        key-store      (doto key-store
+                         (.load stream password))
+        kmf            (doto (KeyManagerFactory/getInstance (KeyManagerFactory/getDefaultAlgorithm))
+                         (.init key-store password))
+        stream         (-> ca
+                           io/file
+                           io/input-stream)
+        ca-pub-key     (.generateCertificate (CertificateFactory/getInstance "X.509") stream)
+        trusted-store  (doto (KeyStore/getInstance (KeyStore/getDefaultType))
+                         (.load nil)
+                         (.setCertificateEntry (.getName (.getSubjectX500Principal ^X509Certificate ca-pub-key))
+                                               ca-pub-key))
+        tmf            (doto (TrustManagerFactory/getInstance (TrustManagerFactory/getDefaultAlgorithm))
+                         (.init trusted-store))
+        trust-managers (.getTrustManagers tmf)
+        ssl-context    (doto (SSLContext/getInstance "TLS")
+                         (.init (.getKeyManagers kmf)
+                                trust-managers
+                                nil))]
+    (fn [^OkHttpClient$Builder builder]
       (.sslSocketFactory builder
                          (.getSocketFactory ssl-context)
                          (aget trust-managers 0)))))
@@ -158,7 +158,6 @@
       (try-json-parse response))))
 
 (comment
-  (require '[clojure.java.io :as io])
   (.getPath (java.net.URI. "unix:///var/run/docker.sock"))
   (req/connect* {:uri "unix:///var/run/docker.sock"})
   (req/fetch {:conn (req/connect* {:uri "unix:///var/run/docker.sock"})
