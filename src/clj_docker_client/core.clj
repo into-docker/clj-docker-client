@@ -15,45 +15,36 @@
 
 (ns clj-docker-client.core
   (:require [clojure.string :as s]
-            [clojure.java.io :as io]
             [jsonista.core :as json]
+            [pem-reader.core :as pem]
             [clj-docker-client.requests :as req]
             [clj-docker-client.specs :as spec])
-  (:import [okhttp3 OkHttpClient$Builder]
-           [java.security KeyStore]
-           [javax.net.ssl KeyManagerFactory TrustManagerFactory SSLContext]
-           [java.security.cert CertificateFactory X509Certificate]))
+  (:import [okhttp3.tls
+            HandshakeCertificates$Builder
+            HeldCertificate]
+           [okhttp3 OkHttpClient$Builder]
+           [java.security KeyPair]
+           [java.security.cert X509Certificate]))
+
+(defn read-cert
+  [path]
+  (-> path
+      pem/read
+      :certificate))
 
 (defn make-builder-fn
-  [{:keys [ca key password]}]
-  (let [password       (.toCharArray ^String password)
-        key-store      (KeyStore/getInstance "PKCS12")
-        stream         (-> key
-                           io/file
-                           io/input-stream)
-        key-store      (doto key-store
-                         (.load stream password))
-        kmf            (doto (KeyManagerFactory/getInstance (KeyManagerFactory/getDefaultAlgorithm))
-                         (.init key-store password))
-        stream         (-> ca
-                           io/file
-                           io/input-stream)
-        ca-pub-key     (.generateCertificate (CertificateFactory/getInstance "X.509") stream)
-        trusted-store  (doto (KeyStore/getInstance (KeyStore/getDefaultType))
-                         (.load nil)
-                         (.setCertificateEntry (.getName (.getSubjectX500Principal ^X509Certificate ca-pub-key))
-                                               ca-pub-key))
-        tmf            (doto (TrustManagerFactory/getInstance (TrustManagerFactory/getDefaultAlgorithm))
-                         (.init trusted-store))
-        trust-managers (.getTrustManagers tmf)
-        ssl-context    (doto (SSLContext/getInstance "TLS")
-                         (.init (.getKeyManagers kmf)
-                                trust-managers
-                                nil))]
+  [{:keys [ca cert key]}]
+  (let [{:keys [public-key private-key]} (pem/read key)
+        key-pair                         (KeyPair. public-key private-key)
+        held-cert                        (HeldCertificate. key-pair (read-cert cert))
+        handshake-certs                  (-> (HandshakeCertificates$Builder.)
+                                             (.addTrustedCertificate (read-cert ca))
+                                             (.heldCertificate held-cert (into-array X509Certificate []))
+                                             (.build))]
     (fn [^OkHttpClient$Builder builder]
       (.sslSocketFactory builder
-                         (.getSocketFactory ssl-context)
-                         (aget trust-managers 0)))))
+                         (.sslSocketFactory handshake-certs)
+                         (.trustManager handshake-certs)))))
 
 (defn ^:deprecated connect
   "Deprecated but still there for compatibility reasons."
@@ -151,13 +142,14 @@
                                                      :as               as
                                                      :throw-exception? throw-exception?})
         try-json-parse                   #(try
-                                            (json/read-value % (json/object-mapper {:decode-key-fn true}))
+                                            (json/read-value % json/keyword-keys-object-mapper)
                                             (catch Exception _ %))]
     (case as
       (:socket :stream) response
       (try-json-parse response))))
 
 (comment
+  (require '[clojure.java.io :as io])
   (.getPath (java.net.URI. "unix:///var/run/docker.sock"))
   (req/connect* {:uri "unix:///var/run/docker.sock"})
   (req/fetch {:conn (req/connect* {:uri "unix:///var/run/docker.sock"})
@@ -180,9 +172,9 @@
   (def http-tls-ping
     (client {:category :_ping
              :conn     {:uri  "https://localhost:8000"
-                        :mtls {:ca       "ca.pem"
-                               :key      "mtls.p12"
-                               :password ""}}}))
+                        :mtls {:ca   "ca.pem"
+                               :key  "key.pem"
+                               :cert "cert.pem"}}}))
   (invoke http-tls-ping {:op :SystemPing})
 
   (def ping

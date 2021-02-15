@@ -13,7 +13,8 @@
 ;   You should have received a copy of the GNU Lesser General Public License
 ;   along with clj-docker-client. If not, see <http://www.gnu.org/licenses/>.
 
-{:deps  {clj-commons/clj-yaml {:mvn/version "0.7.106"}
-         metosin/jsonista     {:mvn/version "0.3.1"}
-         unixsocket-http      {:mvn/version "1.0.6"}}
+{:deps  {clj-commons/clj-yaml             {:mvn/version "0.7.106"}
+         metosin/jsonista                 {:mvn/version "0.3.1"}
+         uunixsocket-http/unixsocket-http {:mvn/version "1.0.6"}
+         into-docker/pem-reader           {:mvn/version "1.0.0-SNAPSHOT"}}
  :paths ["src" "resources"]}
