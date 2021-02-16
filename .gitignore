@@ -16,3 +16,6 @@ pom.xml.asc
 *.iml
 .DS_Store
 .lsp/
+key.pem
+cert.pem
+ca.pem

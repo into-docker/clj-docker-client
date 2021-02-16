@@ -27,9 +27,10 @@ jobs:
       uses: "actions/checkout@v2"
 
     - name: "Restore Cache"
-      uses: "actions/cache@v1"
+      uses: "actions/cache@v2"
       with:
-        path: "~/.m2/repository"
+        path: |
+          "~/.m2/repository"
         key: "${{ runner.os }}-lein-${{ hashFiles('project.clj') }}"
         restore-keys: "${{ runner.os }}-lein-"
 

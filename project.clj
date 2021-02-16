@@ -22,9 +22,9 @@
   :dependencies [[clj-commons/clj-yaml "0.7.106"]
                  [metosin/jsonista "0.3.1"]
                  [unixsocket-http "1.0.6"]
-                 [com.squareup.okhttp3/okhttp-tls "4.9.0"]
-                 [into-docker/pem-reader "1.0.0-SNAPSHOT"]]
-  :plugins [[lein-ancient "0.6.15"]]
+                 [com.squareup.okhttp3/okhttp-tls "4.9.1"]
+                 [into-docker/pem-reader "1.0.0"]]
+  :plugins [[lein-ancient "0.7.0"]]
   :global-vars {*warn-on-reflection* true}
   :profiles {:kaocha {:dependencies [[lambdaisland/kaocha "1.0.732"]]}
              :rebl   {:repl-options   {:nrepl-middleware [nrebl.middleware/wrap-nrebl]}

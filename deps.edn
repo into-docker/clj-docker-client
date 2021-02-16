@@ -15,6 +15,7 @@
 
 {:deps  {clj-commons/clj-yaml             {:mvn/version "0.7.106"}
          metosin/jsonista                 {:mvn/version "0.3.1"}
-         uunixsocket-http/unixsocket-http {:mvn/version "1.0.6"}
-         into-docker/pem-reader           {:mvn/version "1.0.0-SNAPSHOT"}}
+         unixsocket-http/unixsocket-http  {:mvn/version "1.0.6"}
+         com.squareup.okhttp3/okhttp-tls  {:mvn/version "4.9.1"}
+         into-docker/pem-reader           {:mvn/version "1.0.0"}}
  :paths ["src" "resources"]}

@@ -170,11 +170,12 @@
                           io/input-stream)})
   ;; PLANNED API
   (def http-tls-ping
-    (client {:category :_ping
-             :conn     {:uri  "https://localhost:8000"
-                        :mtls {:ca   "ca.pem"
-                               :key  "key.pem"
-                               :cert "cert.pem"}}}))
+    (client {:category    :_ping
+             :conn        {:uri  "https://localhost:8000"
+                           :mtls {:ca   "ca.pem"
+                                  :key  "key.pem"
+                                  :cert "cert.pem"}}
+             :api-version "v1.41"}))
   (invoke http-tls-ping {:op :SystemPing})
 
   (def ping
