@@ -26,13 +26,19 @@
            [java.security KeyPair]
            [java.security.cert X509Certificate]))
 
-(defn read-cert
+(defn- read-cert
   [path]
   (-> path
       pem/read
       :certificate))
 
-(defn make-builder-fn
+(defn- try-json-parse
+  [value]
+  (try
+    (json/read-value value json/keyword-keys-object-mapper)
+    (catch Exception _ value)))
+
+(defn- make-builder-fn
   [{:keys [ca cert key]}]
   (let [{:keys [public-key private-key]} (pem/read key)
         key-pair                         (KeyPair. public-key private-key)
@@ -140,10 +146,7 @@
                                                                            first)
                                                      :path             path
                                                      :as               as
-                                                     :throw-exception? throw-exception?})
-        try-json-parse                   #(try
-                                            (json/read-value % json/keyword-keys-object-mapper)
-                                            (catch Exception _ %))]
+                                                     :throw-exception? throw-exception?})]
     (case as
       (:socket :stream) response
       (try-json-parse response))))
