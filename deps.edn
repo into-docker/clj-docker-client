@@ -17,5 +17,5 @@
          metosin/jsonista                 {:mvn/version "0.3.1"}
          unixsocket-http/unixsocket-http  {:mvn/version "1.0.6"}
          com.squareup.okhttp3/okhttp-tls  {:mvn/version "4.9.1"}
-         into-docker/pem-reader           {:mvn/version "1.0.0"}}
+         into-docker/pem-reader           {:mvn/version "1.0.1"}}
  :paths ["src" "resources"]}

@@ -52,14 +52,12 @@ Maven
 
 Auto generated code docs can be found [here](https://cljdoc.org/d/lispyclouds/clj-docker-client/CURRENT)
 
-### Developing with Cognitect [REBL](http://rebl.cognitect.com/)
-Since this is fully data driven, using REBL is really beneficial as it allows us to _walk_ through the output from Docker, see potential errors and be more productive with instant visual feedback.
+### Developing with [Reveal](https://vlaaad.github.io/reveal/) and Leiningen
+Since this is fully data driven, using Reveal is really beneficial as it allows us to _walk_ through the output from Docker, see potential errors and be more productive with instant visual feedback.
 
-This assumes Java 11+:
-- [Download](http://rebl.cognitect.com/download.html) and unzip the REBL jar to a known location.
-- Start the leiningen REPL with: `REBL_PATH=<PATH_TO_REBL_JAR> lein with-profile +rebl repl`.
-- Connect your editor of choice to this REPL or start using the REBL/REPL directly.
-- Evaluate `(rebl/ui)` to fire up the REBL UI.
+- Clone this repo.
+- In the root, start the leiningen REPL with: `lein with-profile +reveal repl`. This fires up the the Reveal UI alongside the usual REPL.
+- Connect your editor of choice to this REPL or start using Reveal REPL directly.
 - Then repeat after me 3 times: _ALL HAIL THE DATA_! 🙏🏽
 
 ### The Docker API
