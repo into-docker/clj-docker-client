@@ -130,7 +130,7 @@ then there will be no timeout on the client side.
                                                 :write-timeout   30000
                                                 :call-timeout    30000}}}))
 ```
-Alternatively if connecting to a remote docker daemon over TCP supply the `:uri` as `http://your.docker.host:2376`. **NOTE**: `unix://`, `http://` and `tcp://` are the currently supported protocols.
+Alternatively if connecting to a remote docker daemon over TCP supply the `:uri` as `http://your.docker.host:2376`. **NOTE**: `unix://`, `http://`, `tcp://` and `https://` are the currently supported protocols.
 
 #### ops
 Lists the supported ops by a client.
@@ -276,7 +276,7 @@ Thanks [@AustinC](https://github.com/AustinC) for this example.
 (ns dclj.core
   (:require [clj-docker-client.core :as d]
             [cheshire.core :as json])
-  (:import java.util.Base64))
+  (:import [java.util Base64]))
 
 (defn b64-encode
   [to-encode]
@@ -300,6 +300,25 @@ Thanks [@AustinC](https://github.com/AustinC) for this example.
                               :X-Registry-Auth auth}
            :throw-exception? true})
 ```
+
+#### HTTPS and Mutual TLS(mTLS)
+
+Since both https and unix sockets are suppported, and generally docker deamons exposed over HTTPS are protected via [mTLS](https://docs.docker.com/engine/security/protect-access/#use-tls-https-to-protect-the-docker-daemon-socket), here is an example using mTLS to connect to docker via HTTPS:
+
+```clojure
+;; Create a client using https
+;; The ca.pem, key.pem and cert.pem are produced by the docker daemon when protected via mTLS
+(def http-tls-ping
+  (client {:category :_ping
+           :conn     {:uri  "https://my.remote.docker.host:8000"
+                      :mtls {:ca   "ca.pem"
+                             :key  "key.pem"
+                             :cert "cert.pem"}}}))
+
+(invoke http-tls-ping {:op :SystemPing}) ;; => Returns "OK"
+```
+
+The caveat here is _password protected PEM files aren't supported yet_. Please raise an issue if there is a need for it.
 
 ### Not so common scenarios
 
@@ -343,6 +362,22 @@ More examples of low level calls:
             :body   (-> "src.tar.gz"
                         io/file
                         io/input-stream)})
+```
+
+#### Reading a streaming output in case of an exception being thrown
+
+When `:throw-exception?` is passed as `true` and the `:as` is set to `:stream`, to read the response stream, pass `throw-entire-message?` as `true` to the invoke. The stream is available as `:body` in the ex-data of the exception.
+```clojure
+(try
+  (invoke containers
+          {:op                    :ContainerArchive
+           :params                {:id   "conny"
+                                   :path "/this-does-not-exist"}
+           :as                    :stream
+           :throw-exception?      true
+           :throw-entire-message? true})
+  (catch Exception e
+    (-> e ex-data :body slurp println))) ; Prints out the body of error from docker.
 ```
 
 And anything else is possible!
