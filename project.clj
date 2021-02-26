@@ -21,7 +21,7 @@
                  :url  "https://www.gnu.org/licenses/lgpl-3.0.en.html"}
   :dependencies [[clj-commons/clj-yaml "0.7.106"]
                  [metosin/jsonista "0.3.1"]
-                 [unixsocket-http "1.0.6"]
+                 [unixsocket-http "1.0.8"]
                  [com.squareup.okhttp3/okhttp-tls "4.9.1"]
                  [into-docker/pem-reader "1.0.1"]]
   :plugins      [[lein-ancient "0.7.0"]]

@@ -97,9 +97,9 @@
                (invoke pinger {:op :SystemPing})))))
 
     (testing "invoke with exception"
-      (let [containers (client {:category :containers
+      (let [containers (client {:category    :containers
                                 :api-version test-version
-                                :conn     conn})]
+                                :conn        conn})]
         (is (thrown? RuntimeException
                      (invoke containers
                              {:op               :ContainerInspect
@@ -107,9 +107,9 @@
                               :throw-exception? true})))))
 
     (testing "invoke an op with non-stream params"
-      (let [containers (client {:category :containers
+      (let [containers (client {:category    :containers
                                 :api-version test-version
-                                :conn     conn})
+                                :conn        conn})
             image      "busybox:musl"
             cname      "conny"]
         (pull-image image)
@@ -123,9 +123,9 @@
         (delete-image image)))
 
     (testing "invoke an op with stream params"
-      (let [containers (client {:category :containers
+      (let [containers (client {:category    :containers
                                 :api-version test-version
-                                :conn     conn})
+                                :conn        conn})
             image      "busybox:musl"
             cname      "conny"]
         (pull-image image)
@@ -142,5 +142,33 @@
                                  :inputStream (-> "test/clj_docker_client/test.tar.gz"
                                                   io/file
                                                   io/input-stream)}})))
+        (delete-container cname)
+        (delete-image image)))
+
+    (testing "invoke an op with stream and exception"
+      (let [containers (client {:category    :containers
+                                :api-version test-version
+                                :conn        conn})
+            image      "busybox:musl"
+            cname      "conny"]
+        (pull-image image)
+        (invoke containers
+                {:op     :ContainerCreate
+                 :params {:name cname
+                          :body {:Image image
+                                 :Cmd   "ls"}}})
+        (try
+          (invoke containers
+                  {:op                    :ContainerArchive
+                   :params                {:id   cname
+                                           :path "/this-does-not-exist"}
+                   :as                    :stream
+                   :throw-exception?      true
+                   :throw-entire-message? true})
+          (catch Exception ex
+            (is (string? (-> ex
+                             ex-data
+                             :body
+                             slurp)))))
         (delete-container cname)
         (delete-image image)))))

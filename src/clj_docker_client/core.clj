@@ -127,7 +127,7 @@
                     Standard connection exceptions may still be thrown regardless.
 
   If a :socket is requested, the underlying UNIX socket is returned."
-  [{:keys [category conn api-version]} {:keys [op params as throw-exception?]}]
+  [{:keys [category conn api-version]} {:keys [op params as throw-exception? throw-entire-message?]}]
   (when (some nil? [category conn op])
     (req/panic! ":category, :conn are required in client, :op is required in operation map"))
   (let [request-info                     (spec/request-info-of category op api-version)
@@ -136,17 +136,18 @@
         {:keys [body query header path]} (->> request-info
                                               :params
                                               (reduce (partial spec/gather-request-params params) {}))
-        response                         (req/fetch {:conn             (req/connect* conn)
-                                                     :url              (:path request-info)
-                                                     :method           (:method request-info)
-                                                     :query            query
-                                                     :header           header
-                                                     :body             (-> body
-                                                                           vals
-                                                                           first)
-                                                     :path             path
-                                                     :as               as
-                                                     :throw-exception? throw-exception?})]
+        response                         (req/fetch {:conn                  (req/connect* conn)
+                                                     :url                   (:path request-info)
+                                                     :method                (:method request-info)
+                                                     :query                 query
+                                                     :header                header
+                                                     :body                  (-> body
+                                                                                vals
+                                                                                first)
+                                                     :path                  path
+                                                     :as                    as
+                                                     :throw-exception?      throw-exception?
+                                                     :throw-entire-message? throw-entire-message?})]
     (case as
       (:socket :stream) response
       (try-json-parse response))))
@@ -224,6 +225,20 @@
                     :inputStream (-> "src.tar.gz"
                                      io/file
                                      io/input-stream)}})
+  (try
+    (invoke containers
+            {:op                    :ContainerArchive
+             :params                {:id   "conny"
+                                     :path "/yes"}
+             :as                    :stream
+             :throw-exception?      true
+             :throw-entire-message? true})
+    (catch Exception e
+      (-> e
+          ex-data
+          :body
+          slurp)))
+
   (doc containers :ContainerCreate)
   (invoke images {:op :ImageList})
   (def pinger

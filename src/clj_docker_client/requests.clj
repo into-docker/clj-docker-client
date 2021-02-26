@@ -83,16 +83,17 @@
 
 (defn- build-request
   "Builds a Request object for unixsocket-http."
-  [{:keys [conn method ^String url query header path body as throw-exception?]
+  [{:keys [conn method ^String url query header path body as throw-exception? throw-entire-message?]
     :or   {method :get}}]
-  (-> {:client           conn
-       :method           method
-       :url              (interpolate-path url path)
-       :headers          header
-       :query-params     query
-       :body             body
-       :as               (or as :string)
-       :throw-exceptions throw-exception?}
+  (-> {:client                conn
+       :method                method
+       :url                   (interpolate-path url path)
+       :headers               header
+       :query-params          query
+       :body                  body
+       :as                    (or as :string)
+       :throw-exceptions      throw-exception?
+       :throw-entire-message? throw-entire-message?}
       maybe-serialize-body))
 
 (defn fetch
