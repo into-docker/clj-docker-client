@@ -233,6 +233,17 @@ Takes another optional key `:throw-exception?`. Defaults to `false`. If set to t
                            :params {:id "conny"}})
 ```
 
+#### Creating a network
+```clojure
+
+(def networks (docker/client {:category    :networks
+                              :conn        {:uri "unix:///var/run/docker.sock"}
+                              :api-version "v1.40"}))
+
+(docker/invoke networks {:op     :NetworkCreate
+                         :params {:networkConfig {:Name "conny-network"}}})
+```
+
 #### Streaming logs
 ```clojure
 ; fn to react when data is available
