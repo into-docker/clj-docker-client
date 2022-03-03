@@ -10,7 +10,7 @@
 
 An idiomatic, data-driven, REPL friendly Clojure Docker client inspired from Cognitect's AWS [client](https://github.com/cognitect-labs/aws-api).
 
-#### NOTICE: Consider using [contajners](https://github.com/lispyclouds/contajners) too. Supports more container engines like Podman and has a simpler and more efficient design. 😄
+#### NOTICE: [contajners](https://github.com/lispyclouds/contajners) is recommended over this library. Supports more container engines like Podman and has a simpler and more efficient design and would receive new updates. 😄
 
 See [this](https://cljdoc.org/d/lispyclouds/clj-docker-client/0.3.2/doc/readme) for documentation for versions before **0.4.0**.
 
